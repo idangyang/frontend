@@ -40,7 +40,8 @@ router.post('/register', [
         id: user._id,
         username: user.username,
         email: user.email,
-        avatar: user.avatar
+        avatar: user.avatar,
+        isSuperAdmin: user.isSuperAdmin || false
       }
     });
   } catch (error) {
@@ -50,7 +51,7 @@ router.post('/register', [
 
 // 登录
 router.post('/login', [
-  body('email').isEmail().withMessage('请输入有效的邮箱'),
+  body('identifier').notEmpty().withMessage('请输入用户名或邮箱'),
   body('password').notEmpty().withMessage('请输入密码')
 ], async (req, res) => {
   try {
@@ -59,16 +60,23 @@ router.post('/login', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password } = req.body;
+    const { identifier, password } = req.body;
 
-    const user = await User.findOne({ email });
+    // 尝试通过邮箱或用户名查找用户
+    const user = await User.findOne({
+      $or: [
+        { email: identifier },
+        { username: identifier }
+      ]
+    });
+
     if (!user) {
-      return res.status(401).json({ error: '邮箱或密码错误' });
+      return res.status(401).json({ error: '用户名/邮箱或密码错误' });
     }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ error: '邮箱或密码错误' });
+      return res.status(401).json({ error: '用户名/邮箱或密码错误' });
     }
 
     const token = jwt.sign(
@@ -84,7 +92,8 @@ router.post('/login', [
         id: user._id,
         username: user.username,
         email: user.email,
-        avatar: user.avatar
+        avatar: user.avatar,
+        isSuperAdmin: user.isSuperAdmin || false
       }
     });
   } catch (error) {
@@ -195,6 +204,19 @@ router.post('/deactivate', [
     await user.save();
 
     res.json({ message: '账号已注销，数据将在30天后删除' });
+  } catch (error) {
+    res.status(500).json({ error: '服务器错误' });
+  }
+});
+
+// 获取当前用户信息
+router.get('/me', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' });
+    }
+    res.json(user);
   } catch (error) {
     res.status(500).json({ error: '服务器错误' });
   }

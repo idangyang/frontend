@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Video = require('../models/Video');
+const User = require('../models/User');
 const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const fs = require('fs');
@@ -102,6 +103,20 @@ router.get('/', async (req, res) => {
   }
 });
 
+// 获取当前用户上传的视频列表（必须在 /:id 之前）
+router.get('/my-videos', auth, async (req, res) => {
+  try {
+    const videos = await Video.find({ uploader: req.userId })
+      .populate('uploader', 'username avatar')
+      .sort({ createdAt: -1 });
+
+    res.json({ videos });
+  } catch (error) {
+    console.error('获取用户视频列表失败:', error);
+    res.status(500).json({ error: '获取视频列表失败' });
+  }
+});
+
 // 获取单个视频
 router.get('/:id', async (req, res) => {
   try {
@@ -164,6 +179,95 @@ router.get('/stream/:id', async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ error: '视频流传输失败' });
+  }
+});
+
+// 删除视频
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const video = await Video.findById(req.params.id);
+
+    if (!video) {
+      return res.status(404).json({ error: '视频不存在' });
+    }
+
+    // 获取当前用户信息，检查是否是超级管理员
+    const currentUser = await User.findById(req.userId);
+
+    // 检查是否是视频上传者或超级管理员
+    const isOwner = video.uploader.toString() === req.userId.toString();
+    const isSuperAdmin = currentUser && currentUser.isSuperAdmin;
+
+    if (!isOwner && !isSuperAdmin) {
+      return res.status(403).json({ error: '无权删除此视频' });
+    }
+
+    // 删除视频文件
+    if (fs.existsSync(video.filepath)) {
+      fs.unlinkSync(video.filepath);
+    }
+
+    // 删除封面文件
+    if (video.thumbnail) {
+      const thumbnailPath = path.join(__dirname, '..', video.thumbnail);
+      if (fs.existsSync(thumbnailPath)) {
+        fs.unlinkSync(thumbnailPath);
+      }
+    }
+
+    // 从数据库删除视频记录
+    await Video.findByIdAndDelete(req.params.id);
+
+    res.json({ message: '视频删除成功' });
+  } catch (error) {
+    console.error('删除视频失败:', error);
+    res.status(500).json({ error: '删除视频失败' });
+  }
+});
+
+// 搜索用户（仅超级管理员）
+router.get('/admin/search-users', auth, async (req, res) => {
+  try {
+    const currentUser = await User.findById(req.userId);
+
+    if (!currentUser || !currentUser.isSuperAdmin) {
+      return res.status(403).json({ error: '无权访问' });
+    }
+
+    const { username } = req.query;
+
+    if (!username) {
+      return res.status(400).json({ error: '请提供用户名' });
+    }
+
+    const users = await User.find({
+      username: { $regex: username, $options: 'i' }
+    }).select('_id username email').limit(10);
+
+    res.json({ users });
+  } catch (error) {
+    console.error('搜索用户失败:', error);
+    res.status(500).json({ error: '搜索用户失败' });
+  }
+});
+
+// 获取指定用户的视频（仅超级管理员）
+router.get('/admin/user-videos/:userId', auth, async (req, res) => {
+  try {
+    const currentUser = await User.findById(req.userId);
+
+    if (!currentUser || !currentUser.isSuperAdmin) {
+      return res.status(403).json({ error: '无权访问' });
+    }
+
+    const videos = await Video.find({ uploader: req.params.userId })
+      .populate('uploader', 'username')
+      .sort({ createdAt: -1 });
+
+    res.json({ videos });
+  } catch (error) {
+    console.error('获取用户视频失败:', error);
+    res.status(500).json({ error: '获取用户视频失败' });
   }
 });
 

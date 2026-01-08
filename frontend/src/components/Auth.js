@@ -9,6 +9,7 @@ const Auth = ({ onLoginSuccess }) => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
+    identifier: '', // 用于登录时的用户名或邮箱
     password: ''
   });
   const [loading, setLoading] = useState(false);
@@ -27,14 +28,20 @@ const Auth = ({ onLoginSuccess }) => {
     try {
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
       const data = isLogin
-        ? { email: formData.email, password: formData.password }
+        ? { identifier: formData.identifier, password: formData.password }
         : formData;
 
       const response = await api.post(endpoint, data);
 
+      console.log('Auth - 登录响应数据:', response.data);
+      console.log('Auth - 用户信息:', response.data.user);
+      console.log('Auth - isSuperAdmin:', response.data.user.isSuperAdmin);
+
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       localStorage.setItem('userId', response.data.user._id);
+
+      console.log('Auth - 已保存到localStorage的用户信息:', JSON.parse(localStorage.getItem('user')));
 
       alert(isLogin ? '登录成功！' : '注册成功！');
 
@@ -70,16 +77,30 @@ const Auth = ({ onLoginSuccess }) => {
             </div>
           )}
 
-          <div className="form-group">
-            <label>邮箱</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
+          {isLogin ? (
+            <div className="form-group">
+              <label>用户名或邮箱</label>
+              <input
+                type="text"
+                name="identifier"
+                value={formData.identifier}
+                onChange={handleChange}
+                placeholder="请输入用户名或邮箱"
+                required
+              />
+            </div>
+          ) : (
+            <div className="form-group">
+              <label>邮箱</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
+          )}
 
           <div className="form-group">
             <label>密码</label>
