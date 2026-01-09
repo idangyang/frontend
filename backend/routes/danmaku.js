@@ -2,25 +2,34 @@ const express = require('express');
 const router = express.Router();
 const Danmaku = require('../models/Danmaku');
 const auth = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
-// 发送弹幕
-router.post('/', auth, async (req, res) => {
+// 发送弹幕（支持语音弹幕）
+router.post('/', auth, upload.single('audio'), async (req, res) => {
   try {
-    const { videoId, text, time, color, type } = req.body;
+    const { videoId, text, time, color, type, isVoice, duration } = req.body;
 
     if (!videoId || !text || time === undefined) {
       return res.status(400).json({ error: '缺少必要参数' });
     }
 
-    const danmaku = new Danmaku({
+    const danmakuData = {
       videoId,
       user: req.userId,
       text,
       time,
       color: color || '#FFFFFF',
-      type: type || 'scroll'
-    });
+      type: type || 'scroll',
+      isVoice: isVoice === 'true' || isVoice === true,
+      duration: duration ? parseFloat(duration) : 0
+    };
 
+    // 如果是语音弹幕且有音频文件
+    if (danmakuData.isVoice && req.file) {
+      danmakuData.audioUrl = `/uploads/audio/${req.file.filename}`;
+    }
+
+    const danmaku = new Danmaku(danmakuData);
     await danmaku.save();
 
     res.status(201).json({
@@ -28,6 +37,7 @@ router.post('/', auth, async (req, res) => {
       danmaku
     });
   } catch (error) {
+    console.error('发送弹幕失败:', error);
     res.status(500).json({ error: '发送弹幕失败' });
   }
 });

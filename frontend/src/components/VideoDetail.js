@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import DanmakuEngine from '../utils/DanmakuEngine';
+import VoiceRecorder from './VoiceRecorder';
 import './VideoDetail.css';
 
 const VideoDetail = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const danmakuEngineRef = useRef(null);
@@ -21,10 +21,12 @@ const VideoDetail = () => {
   const [danmakuColor, setDanmakuColor] = useState('#FFFFFF');
   const [commentText, setCommentText] = useState('');
   const [lastTime, setLastTime] = useState(0);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
   const shownDanmakusRef = useRef(new Set());
 
   useEffect(() => {
     fetchVideoData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
@@ -87,12 +89,26 @@ const VideoDetail = () => {
           if (timeJump) {
             if (Math.abs(danmaku.time - currentTime) < 0.5) {
               console.log('显示弹幕:', danmaku.text, '弹幕时间:', danmaku.time, '当前时间:', currentTime);
-              danmakuEngineRef.current.add(danmaku.text, danmaku.color || '#FFFFFF', danmaku.type || 'scroll');
+              console.log('弹幕数据:', { isVoice: danmaku.isVoice, audioUrl: danmaku.audioUrl });
+              danmakuEngineRef.current.add(
+                danmaku.text,
+                danmaku.color || '#FFFFFF',
+                danmaku.type || 'scroll',
+                danmaku.isVoice || false,
+                danmaku.audioUrl || null
+              );
               shownDanmakusRef.current.add(danmaku._id);
             }
           } else {
             console.log('显示弹幕:', danmaku.text, '弹幕时间:', danmaku.time, '当前时间:', currentTime);
-            danmakuEngineRef.current.add(danmaku.text, danmaku.color || '#FFFFFF', danmaku.type || 'scroll');
+            console.log('弹幕数据:', { isVoice: danmaku.isVoice, audioUrl: danmaku.audioUrl });
+            danmakuEngineRef.current.add(
+              danmaku.text,
+              danmaku.color || '#FFFFFF',
+              danmaku.type || 'scroll',
+              danmaku.isVoice || false,
+              danmaku.audioUrl || null
+            );
             shownDanmakusRef.current.add(danmaku._id);
           }
         }
@@ -148,8 +164,7 @@ const VideoDetail = () => {
       });
 
       if (danmakuEngineRef.current) {
-        danmakuEngineRef.current.add(danmakuText, danmakuColor, 'scroll');
-        // 将新发送的弹幕ID添加到已显示列表，防止重复显示
+        danmakuEngineRef.current.add(danmakuText, danmakuColor, 'scroll', false, null);
         shownDanmakusRef.current.add(response.data.danmaku._id);
       }
 
@@ -158,6 +173,38 @@ const VideoDetail = () => {
     } catch (err) {
       console.error('发送弹幕失败:', err);
       alert('发送弹幕失败');
+    }
+  };
+
+  const handleVoiceRecordComplete = async ({ audioBlob, text, duration }) => {
+    try {
+      const currentTime = videoRef.current?.currentTime || 0;
+      const formData = new FormData();
+
+      formData.append('videoId', id);
+      formData.append('text', text);
+      formData.append('time', currentTime);
+      formData.append('color', danmakuColor);
+      formData.append('type', 'scroll');
+      formData.append('isVoice', 'true');
+      formData.append('duration', duration);
+      formData.append('audio', audioBlob, 'voice-danmaku.webm');
+
+      const response = await api.post('/danmaku', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (danmakuEngineRef.current) {
+        const audioUrl = `http://localhost:5001${response.data.danmaku.audioUrl}`;
+        danmakuEngineRef.current.add(text, danmakuColor, 'scroll', true, audioUrl);
+        shownDanmakusRef.current.add(response.data.danmaku._id);
+      }
+
+      setDanmakus([...danmakus, response.data.danmaku]);
+      setIsVoiceMode(false);
+    } catch (err) {
+      console.error('发送语音弹幕失败:', err);
+      alert('发送语音弹幕失败');
     }
   };
 
@@ -234,24 +281,47 @@ const VideoDetail = () => {
         </div>
 
         <div className="danmaku-input-section">
-          <h3>发送弹幕</h3>
-          <form onSubmit={handleSendDanmaku} className="danmaku-form">
-            <input
-              type="text"
-              value={danmakuText}
-              onChange={(e) => setDanmakuText(e.target.value)}
-              placeholder="输入弹幕内容..."
-              maxLength={100}
-              className="danmaku-input"
-            />
-            <input
-              type="color"
-              value={danmakuColor}
-              onChange={(e) => setDanmakuColor(e.target.value)}
-              className="color-picker"
-            />
-            <button type="submit" className="send-button">发送</button>
-          </form>
+          <div className="danmaku-header">
+            <h3>发送弹幕</h3>
+            <div className="danmaku-mode-toggle">
+              <button
+                type="button"
+                className={!isVoiceMode ? 'mode-btn active' : 'mode-btn'}
+                onClick={() => setIsVoiceMode(false)}
+              >
+                文字弹幕
+              </button>
+              <button
+                type="button"
+                className={isVoiceMode ? 'mode-btn active' : 'mode-btn'}
+                onClick={() => setIsVoiceMode(true)}
+              >
+                语音弹幕
+              </button>
+            </div>
+          </div>
+
+          {!isVoiceMode ? (
+            <form onSubmit={handleSendDanmaku} className="danmaku-form">
+              <input
+                type="text"
+                value={danmakuText}
+                onChange={(e) => setDanmakuText(e.target.value)}
+                placeholder="输入弹幕内容..."
+                maxLength={100}
+                className="danmaku-input"
+              />
+              <input
+                type="color"
+                value={danmakuColor}
+                onChange={(e) => setDanmakuColor(e.target.value)}
+                className="color-picker"
+              />
+              <button type="submit" className="send-button">发送</button>
+            </form>
+          ) : (
+            <VoiceRecorder onRecordComplete={handleVoiceRecordComplete} maxDuration={10} />
+          )}
         </div>
       </div>
 

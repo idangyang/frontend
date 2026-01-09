@@ -5,12 +5,16 @@ const fs = require('fs');
 // 确保上传目录存在
 const videoDir = path.join(__dirname, '../uploads/videos');
 const thumbnailDir = path.join(__dirname, '../uploads/thumbnails');
+const audioDir = path.join(__dirname, '../uploads/audio');
 
 if (!fs.existsSync(videoDir)) {
   fs.mkdirSync(videoDir, { recursive: true });
 }
 if (!fs.existsSync(thumbnailDir)) {
   fs.mkdirSync(thumbnailDir, { recursive: true });
+}
+if (!fs.existsSync(audioDir)) {
+  fs.mkdirSync(audioDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
@@ -20,6 +24,8 @@ const storage = multer.diskStorage({
       cb(null, videoDir);
     } else if (file.fieldname === 'thumbnail') {
       cb(null, thumbnailDir);
+    } else if (file.fieldname === 'audio') {
+      cb(null, audioDir);
     } else {
       cb(null, videoDir);
     }
@@ -52,6 +58,17 @@ const fileFilter = (req, file, cb) => {
       cb(null, true);
     } else {
       cb(new Error('只支持图片文件格式'));
+    }
+  } else if (file.fieldname === 'audio') {
+    // 音频文件验证
+    const allowedTypes = /mp3|webm|ogg|wav|m4a/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = /audio\/(mpeg|webm|ogg|wav|mp4)/.test(file.mimetype);
+
+    if (extname || mimetype) {
+      cb(null, true);
+    } else {
+      cb(new Error('只支持音频文件格式'));
     }
   } else {
     cb(new Error('未知的文件字段'));

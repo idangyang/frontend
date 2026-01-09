@@ -1,0 +1,200 @@
+.voice-recorder {
+  margin: 10px 0;
+}
+
+.recorder-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.record-btn {
+  padding: 10px 20px;
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.record-btn:hover {
+  background: #ff6666;
+}
+
+.recording-status {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+  background: rgba(255, 68, 68, 0.1);
+  border-radius: 5px;
+}
+
+.stop-btn {
+  padding: 8px 16px;
+  background: #333;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.stop-btn:hover {
+  background: #555;
+}
+
+.recording-time {
+  font-weight: bold;
+  color: #ff4444;
+}
+
+.recording-indicator {
+  color: #ff4444;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+.recorded-audio {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 5px;
+}
+
+.recorded-audio audio {
+  width: 100%;
+  height: 40px;
+}
+
+.transcribed-text {
+  padding: 10px;
+  background: white;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+
+.transcribed-text strong {
+  color: #333;
+  margin-right: 5px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.confirm-btn,
+.reset-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.confirm-btn {
+  background: #4CAF50;
+  color: white;
+}
+
+.confirm-btn:hover {
+  background: #45a049;
+}
+
+.reset-btn {
+  background: #f44336;
+  color: white;
+}
+
+.reset-btn:hover {
+  background: #da190b;
+}
+
+/* 未识别文本时的选项 */
+.no-text-options {
+  margin: 10px 0;
+  padding: 15px;
+  background: rgba(255, 152, 0, 0.1);
+  border-radius: 5px;
+  border: 1px dashed #ff9800;
+}
+
+.options-hint {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #ff9800;
+  font-weight: 600;
+}
+
+.option-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.option-btn {
+  flex: 1;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.option-btn.direct-send {
+  background: #2196F3;
+  color: white;
+}
+
+.option-btn.direct-send:hover {
+  background: #1976D2;
+  transform: translateY(-2px);
+}
+
+.option-btn.manual-input {
+  background: #FF9800;
+  color: white;
+}
+
+.option-btn.manual-input:hover {
+  background: #F57C00;
+  transform: translateY(-2px);
+}
+
+/* 手动输入文字区域 */
+.manual-input-section {
+  margin: 10px 0;
+}
+
+.manual-text-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #FF9800;
+  border-radius: 5px;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: all 0.3s;
+}
+
+.manual-text-input:focus {
+  outline: none;
+  border-color: #F57C00;
+  box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.2);
+}
+
+.manual-text-input::placeholder {
+  color: #999;
+}

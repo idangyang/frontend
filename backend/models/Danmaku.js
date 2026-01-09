@@ -29,6 +29,18 @@ const danmakuSchema = new mongoose.Schema({
     enum: ['scroll', 'top', 'bottom'],
     default: 'scroll'
   },
+  isVoice: {
+    type: Boolean,
+    default: false
+  },
+  audioUrl: {
+    type: String,
+    default: null
+  },
+  duration: {
+    type: Number,
+    default: 0
+  },
   createdAt: {
     type: Date,
     default: Date.now
