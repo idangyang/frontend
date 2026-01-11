@@ -9,8 +9,8 @@ const app = express();
 
 // 中间件
 app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true,
+  origin: '*',
+  credentials: false,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -42,6 +42,6 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/series', seriesRoutes);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`服务器运行在端口 ${PORT}`);
 });

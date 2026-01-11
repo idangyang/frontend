@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import './SeriesUpload.css';
 
-const API_URL = 'http://localhost:5001/api';
+const API_URL = 'http://localhost:5002/api';
 
 function SeriesUpload() {
   // 剧集信息

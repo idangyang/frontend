@@ -599,7 +599,7 @@ const UserProfile = () => {
 
                       <div className="video-item-thumbnail">
                         {video.thumbnail ? (
-                          <img src={`http://localhost:5001/${video.thumbnail}`} alt={video.title} />
+                          <img src={`http://localhost:5002/${video.thumbnail}`} alt={video.title} />
                         ) : (
                           <div className="thumbnail-placeholder">📹</div>
                         )}
@@ -688,7 +688,7 @@ const UserProfile = () => {
                           onClick={() => navigate(`/series/${series._id}`)}
                         >
                           {series.thumbnail ? (
-                            <img src={`http://localhost:5001/${series.thumbnail}`} alt={series.title} />
+                            <img src={`http://localhost:5002/${series.thumbnail}`} alt={series.title} />
                           ) : (
                             <div className="thumbnail-placeholder">📺</div>
                           )}
@@ -722,7 +722,7 @@ const UserProfile = () => {
                               <div key={episode._id} className="episode-card">
                                 <div className="episode-thumbnail">
                                   {episode.thumbnail ? (
-                                    <img src={`http://localhost:5001/${episode.thumbnail}`} alt={episode.title} />
+                                    <img src={`http://localhost:5002/${episode.thumbnail}`} alt={episode.title} />
                                   ) : (
                                     <div className="thumbnail-placeholder">📹</div>
                                   )}
@@ -812,7 +812,7 @@ const UserProfile = () => {
                   <div key={video._id} className="video-item">
                     <div className="video-item-thumbnail">
                       {video.thumbnail ? (
-                        <img src={`http://localhost:5001/${video.thumbnail}`} alt={video.title} />
+                        <img src={`http://localhost:5002/${video.thumbnail}`} alt={video.title} />
                       ) : (
                         <div className="thumbnail-placeholder">📹</div>
                       )}

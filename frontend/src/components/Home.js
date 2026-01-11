@@ -195,7 +195,7 @@ const Home = () => {
                     <div className="video-thumbnail-wrapper">
                       <div className="video-thumbnail">
                         {s.thumbnail ? (
-                          <img src={`http://localhost:5001/${s.thumbnail}`} alt={s.title} />
+                          <img src={`http://localhost:5002/${s.thumbnail}`} alt={s.title} />
                         ) : (
                           <div className="thumbnail-placeholder">
                             <span>📺</span>
@@ -229,7 +229,7 @@ const Home = () => {
                     <div className="video-thumbnail-wrapper">
                       <div className="video-thumbnail">
                         {s.thumbnail ? (
-                          <img src={`http://localhost:5001/${s.thumbnail}`} alt={s.title} />
+                          <img src={`http://localhost:5002/${s.thumbnail}`} alt={s.title} />
                         ) : (
                           <div className="thumbnail-placeholder">
                             <span>📺</span>

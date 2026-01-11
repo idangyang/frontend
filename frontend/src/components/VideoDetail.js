@@ -195,7 +195,7 @@ const VideoDetail = () => {
       });
 
       if (danmakuEngineRef.current) {
-        const audioUrl = `http://localhost:5001${response.data.danmaku.audioUrl}`;
+        const audioUrl = `http://localhost:5002${response.data.danmaku.audioUrl}`;
         danmakuEngineRef.current.add(text, danmakuColor, 'scroll', true, audioUrl);
         shownDanmakusRef.current.add(response.data.danmaku._id);
       }
@@ -250,7 +250,7 @@ const VideoDetail = () => {
     return <div className="video-detail-container"><div className="error">视频不存在</div></div>;
   }
 
-  const videoUrl = `http://localhost:5001/api/videos/stream/${video._id}`;
+  const videoUrl = `http://localhost:5002/api/videos/stream/${video._id}`;
 
   return (
     <div className="video-detail-container">
