@@ -201,3 +201,31 @@ section h2 {
     transform: translateY(0);
   }
 }
+
+/* ========================================
+   全局按钮样式 - 紫色玻璃效果主题
+   ======================================== */
+
+/* 基础按钮样式 */
+.btn,
+button.glass-btn {
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn:hover,
+button.glass-btn:hover {
+  background: rgba(155, 89, 182, 0.3) !important;
+  border-color: rgba(155, 89, 182, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3) !important;
+  transform: translateY(-2px);
+}

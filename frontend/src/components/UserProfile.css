@@ -106,24 +106,32 @@
 }
 
 .btn-primary {
-  background: var(--primary-gradient);
-  color: white;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover:not(:disabled) {
-  box-shadow: var(--shadow-md);
+  background: rgba(155, 89, 182, 0.3) !important;
+  border-color: rgba(155, 89, 182, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3) !important;
   transform: translateY(-2px);
 }
 
 .btn-secondary {
-  background: var(--secondary-gradient);
-  color: white;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary:hover {
-  box-shadow: var(--shadow-md);
+  background: rgba(155, 89, 182, 0.3) !important;
+  border-color: rgba(155, 89, 182, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3) !important;
   transform: translateY(-2px);
 }
 
@@ -326,12 +334,16 @@
 }
 
 .btn-view {
-  background: var(--primary-gradient);
-  color: white;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 .btn-view:hover {
-  box-shadow: var(--shadow-md);
+  background: rgba(155, 89, 182, 0.3) !important;
+  border-color: rgba(155, 89, 182, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3) !important;
   transform: translateY(-2px);
 }
 
@@ -493,19 +505,22 @@
 
 .btn-search {
   padding: 12px 24px;
-  background: var(--primary-gradient);
-  color: white;
-  border: none;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: var(--radius-sm);
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.3s;
   box-shadow: var(--shadow-sm);
 }
 
 .btn-search:hover {
-  box-shadow: var(--shadow-md);
+  background: rgba(155, 89, 182, 0.3) !important;
+  border-color: rgba(155, 89, 182, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3) !important;
   transform: translateY(-2px);
 }
 
@@ -565,19 +580,22 @@
 
 .btn-clear-selection {
   padding: 10px 20px;
-  background: var(--secondary-gradient);
-  color: white;
-  border: none;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.3s;
   box-shadow: var(--shadow-sm);
 }
 
 .btn-clear-selection:hover {
-  box-shadow: var(--shadow-md);
+  background: rgba(155, 89, 182, 0.3) !important;
+  border-color: rgba(155, 89, 182, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3) !important;
   transform: translateY(-2px);
 }
 

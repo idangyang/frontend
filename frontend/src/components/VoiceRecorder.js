@@ -59,15 +59,9 @@ const VoiceRecorder = ({ onRecordComplete, maxDuration = 10 }) => {
       setRecordingTime(0);
       setTranscribedText('');
 
-      // 启动计时器
+      // 启动计时器（不限制时长）
       timerRef.current = setInterval(() => {
-        setRecordingTime(prev => {
-          const newTime = prev + 1;
-          if (newTime >= maxDuration) {
-            stopRecording();
-          }
-          return newTime;
-        });
+        setRecordingTime(prev => prev + 1);
       }, 1000);
 
     } catch (error) {
@@ -166,7 +160,7 @@ const VoiceRecorder = ({ onRecordComplete, maxDuration = 10 }) => {
               ⏹ 停止录音
             </button>
             <span className="recording-time">
-              {recordingTime}s / {maxDuration}s
+              {recordingTime}s
             </span>
             <span className="recording-indicator">● 录音中...</span>
           </div>
@@ -196,9 +190,17 @@ const VoiceRecorder = ({ onRecordComplete, maxDuration = 10 }) => {
 
             <div className="action-buttons">
               {transcribedText && (
-                <button className="confirm-btn" onClick={handleConfirm}>
-                  ✓ 确认发送
-                </button>
+                <>
+                  <button className="confirm-btn" onClick={handleConfirm}>
+                    ✓ 确认发送
+                  </button>
+                  <button className="option-btn manual-input" onClick={resetRecorder}>
+                    重新录制
+                  </button>
+                  <button className="option-btn clear-btn" onClick={resetRecorder}>
+                    清除
+                  </button>
+                </>
               )}
             </div>
           </div>

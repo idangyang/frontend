@@ -57,15 +57,19 @@
 
 .send-button {
   padding: 10px 25px;
-  background: #1890ff;
-  color: white;
-  border: none;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
+  transition: all 0.3s;
 }
 
 .send-button:hover {
-  background: #40a9ff;
+  background: rgba(155, 89, 182, 0.3) !important;
+  border-color: rgba(155, 89, 182, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3) !important;
 }

@@ -297,8 +297,9 @@
 }
 
 .mode-btn:hover {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  background: rgba(155, 89, 182, 0.3) !important;
+  border-color: rgba(155, 89, 182, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3) !important;
 }
 
 .mode-btn.active {

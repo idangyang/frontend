@@ -10,17 +10,20 @@
 
 .record-btn {
   padding: 10px 20px;
-  background: #ff4444;
-  color: white;
-  border: none;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 5px;
   cursor: pointer;
   font-size: 14px;
-  transition: background 0.3s;
+  transition: all 0.3s;
 }
 
 .record-btn:hover {
-  background: #ff6666;
+  background: rgba(155, 89, 182, 0.3) !important;
+  border-color: rgba(155, 89, 182, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3) !important;
 }
 
 .recording-status {
@@ -34,16 +37,20 @@
 
 .stop-btn {
   padding: 8px 16px;
-  background: #333;
-  color: white;
-  border: none;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 5px;
   cursor: pointer;
   font-size: 14px;
+  transition: all 0.3s;
 }
 
 .stop-btn:hover {
-  background: #555;
+  background: rgba(155, 89, 182, 0.3) !important;
+  border-color: rgba(155, 89, 182, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3) !important;
 }
 
 .recording-time {
@@ -97,7 +104,10 @@
 .reset-btn {
   flex: 1;
   padding: 10px;
-  border: none;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 5px;
   cursor: pointer;
   font-size: 14px;
@@ -105,21 +115,25 @@
 }
 
 .confirm-btn {
-  background: #4CAF50;
-  color: white;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
 }
 
 .confirm-btn:hover {
-  background: #45a049;
+  background: rgba(155, 89, 182, 0.3) !important;
+  border-color: rgba(155, 89, 182, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3) !important;
 }
 
 .reset-btn {
-  background: #f44336;
-  color: white;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
 }
 
 .reset-btn:hover {
-  background: #da190b;
+  background: rgba(155, 89, 182, 0.3) !important;
+  border-color: rgba(155, 89, 182, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3) !important;
 }
 
 /* 未识别文本时的选项 */
@@ -146,7 +160,10 @@
 .option-btn {
   flex: 1;
   padding: 10px 15px;
-  border: none;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 5px;
   cursor: pointer;
   font-size: 13px;
@@ -155,22 +172,26 @@
 }
 
 .option-btn.direct-send {
-  background: #2196F3;
-  color: white;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
 }
 
 .option-btn.direct-send:hover {
-  background: #1976D2;
+  background: rgba(155, 89, 182, 0.3) !important;
+  border-color: rgba(155, 89, 182, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3) !important;
   transform: translateY(-2px);
 }
 
 .option-btn.manual-input {
-  background: #FF9800;
-  color: white;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
 }
 
 .option-btn.manual-input:hover {
-  background: #F57C00;
+  background: rgba(155, 89, 182, 0.3) !important;
+  border-color: rgba(155, 89, 182, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3) !important;
   transform: translateY(-2px);
 }
 
