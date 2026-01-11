@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 import './SeriesUpload.css';
-
-const API_URL = 'http://localhost:5002/api';
 
 function SeriesUpload() {
   // 剧集信息
@@ -51,7 +50,7 @@ function SeriesUpload() {
         formData.append('thumbnail', seriesData.thumbnail);
       }
 
-      const response = await axios.post(`${API_URL}/series/create`, formData, {
+      const response = await axios.post(`${API_BASE_URL}/series/create`, formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -81,7 +80,7 @@ function SeriesUpload() {
           episodeFormData.append('description', video.description);
 
           await axios.post(
-            `${API_URL}/series/${newSeriesId}/upload-episode`,
+            `${API_BASE_URL}/series/${newSeriesId}/upload-episode`,
             episodeFormData,
             {
               headers: {

@@ -1,3 +1,5 @@
+import { getResourceUrl } from '../config';
+
 class DanmakuEngine {
   constructor(canvas) {
     this.canvas = canvas;
@@ -84,7 +86,7 @@ class DanmakuEngine {
 
     // 如果是语音弹幕，创建音频和按钮
     if (isVoice && audioUrl) {
-      danmaku.audio = new Audio(`http://localhost:5002${audioUrl}`);
+      danmaku.audio = new Audio(getResourceUrl(audioUrl));
       danmaku.button = this.createVoiceButton(danmaku);
     }
 

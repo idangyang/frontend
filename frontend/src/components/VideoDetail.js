@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import DanmakuEngine from '../utils/DanmakuEngine';
 import VoiceRecorder from './VoiceRecorder';
+import { getResourceUrl, getVideoStreamUrl } from '../config';
 import './VideoDetail.css';
 
 const VideoDetail = () => {
@@ -195,7 +196,7 @@ const VideoDetail = () => {
       });
 
       if (danmakuEngineRef.current) {
-        const audioUrl = `http://localhost:5002${response.data.danmaku.audioUrl}`;
+        const audioUrl = getResourceUrl(response.data.danmaku.audioUrl);
         danmakuEngineRef.current.add(text, danmakuColor, 'scroll', true, audioUrl);
         shownDanmakusRef.current.add(response.data.danmaku._id);
       }
@@ -250,7 +251,7 @@ const VideoDetail = () => {
     return <div className="video-detail-container"><div className="error">视频不存在</div></div>;
   }
 
-  const videoUrl = `http://localhost:5002/api/videos/stream/${video._id}`;
+  const videoUrl = getVideoStreamUrl(video._id);
 
   return (
     <div className="video-detail-container">

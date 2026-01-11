@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { getResourceUrl } from '../config';
 import './UserProfile.css';
 
 const UserProfile = () => {
@@ -599,7 +600,7 @@ const UserProfile = () => {
 
                       <div className="video-item-thumbnail">
                         {video.thumbnail ? (
-                          <img src={`http://localhost:5002/${video.thumbnail}`} alt={video.title} />
+                          <img src={getResourceUrl(video.thumbnail)} alt={video.title} />
                         ) : (
                           <div className="thumbnail-placeholder">📹</div>
                         )}
@@ -688,7 +689,7 @@ const UserProfile = () => {
                           onClick={() => navigate(`/series/${series._id}`)}
                         >
                           {series.thumbnail ? (
-                            <img src={`http://localhost:5002/${series.thumbnail}`} alt={series.title} />
+                            <img src={getResourceUrl(series.thumbnail)} alt={series.title} />
                           ) : (
                             <div className="thumbnail-placeholder">📺</div>
                           )}
@@ -722,7 +723,7 @@ const UserProfile = () => {
                               <div key={episode._id} className="episode-card">
                                 <div className="episode-thumbnail">
                                   {episode.thumbnail ? (
-                                    <img src={`http://localhost:5002/${episode.thumbnail}`} alt={episode.title} />
+                                    <img src={getResourceUrl(episode.thumbnail)} alt={episode.title} />
                                   ) : (
                                     <div className="thumbnail-placeholder">📹</div>
                                   )}

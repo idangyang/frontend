@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 import './SeriesDetail.css';
-
-const API_URL = 'http://localhost:5002/api';
 
 function SeriesDetail() {
   const { seriesId } = useParams();
@@ -20,7 +19,7 @@ function SeriesDetail() {
   const fetchSeriesData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/series/${seriesId}`);
+      const response = await axios.get(`${API_BASE_URL}/series/${seriesId}`);
       setSeries(response.data.series);
       setEpisodes(response.data.episodes);
 
@@ -73,7 +72,7 @@ function SeriesDetail() {
                 controls
                 autoPlay
                 className="episode-video"
-                src={`${API_URL}/series/stream/${currentEpisode._id}`}
+                src={`${API_BASE_URL}/series/stream/${currentEpisode._id}`}
               />
               {currentEpisode.description && (
                 <p className="episode-description">{currentEpisode.description}</p>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { getResourceUrl } from '../config';
 import './Home.css';
 
 const Home = () => {
@@ -197,7 +198,7 @@ const Home = () => {
                     <div className="video-thumbnail-wrapper">
                       <div className="video-thumbnail">
                         {s.thumbnail ? (
-                          <img src={`http://localhost:5002/${s.thumbnail}`} alt={s.title} />
+                          <img src={getResourceUrl(s.thumbnail)} alt={s.title} />
                         ) : (
                           <div className="thumbnail-placeholder">
                             <span>📺</span>
@@ -231,7 +232,7 @@ const Home = () => {
                     <div className="video-thumbnail-wrapper">
                       <div className="video-thumbnail">
                         {s.thumbnail ? (
-                          <img src={`http://localhost:5002/${s.thumbnail}`} alt={s.title} />
+                          <img src={getResourceUrl(s.thumbnail)} alt={s.title} />
                         ) : (
                           <div className="thumbnail-placeholder">
                             <span>📺</span>
@@ -278,7 +279,7 @@ const Home = () => {
                   <div className="video-thumbnail-wrapper">
                     <div className="video-thumbnail">
                       {video.thumbnail ? (
-                        <img src={`http://localhost:5001/${video.thumbnail}`} alt={video.title} />
+                        <img src={getResourceUrl(video.thumbnail)} alt={video.title} />
                       ) : (
                         <div className="thumbnail-placeholder">
                           <span>📹</span>
@@ -311,7 +312,7 @@ const Home = () => {
                   <div className="video-thumbnail-wrapper">
                     <div className="video-thumbnail">
                       {video.thumbnail ? (
-                        <img src={`http://localhost:5001/${video.thumbnail}`} alt={video.title} />
+                        <img src={getResourceUrl(video.thumbnail)} alt={video.title} />
                       ) : (
                         <div className="thumbnail-placeholder">
                           <span>📹</span>

@@ -1,7 +1,5 @@
 import axios from 'axios';
-
-// 从环境变量读取 API 地址，如果没有则使用默认值
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5002/api';
+import { API_BASE_URL } from '../config';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
