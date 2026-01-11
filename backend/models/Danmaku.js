@@ -13,7 +13,7 @@ const danmakuSchema = new mongoose.Schema({
   },
   text: {
     type: String,
-    required: true,
+    required: true,dasdasdasdasdas
     maxlength: 100
   },
   time: {

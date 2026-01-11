@@ -16,7 +16,7 @@ const episodeSchema = new mongoose.Schema({
     default: 0
   },
   title: {
-    type: String,
+    type: String,dasdasdasdasd
     required: true,
     trim: true
   },
