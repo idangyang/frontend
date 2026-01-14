@@ -52,6 +52,166 @@
   transform: translateY(-2px);
 }
 
+/* 搜索框样式 */
+.search-container {
+  position: relative;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-input-container {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-wrapper > .search-input {
+  position: relative;
+}
+
+.search-input {
+  width: 100%;
+  padding: 14px 50px 14px 20px;
+  font-size: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.search-input:focus {
+  border-color: rgba(155, 89, 182, 0.8);
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
+}
+
+.search-clear-button {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(155, 89, 182, 0.5);
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.search-clear-button:hover {
+  background: rgba(155, 89, 182, 0.7);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.search-button {
+  padding: 14px 28px;
+  font-size: 16px;
+  font-weight: 600;
+  border: 2px solid rgba(155, 89, 182, 0.5);
+  border-radius: 50px;
+  background: rgba(155, 89, 182, 0.5);
+  backdrop-filter: blur(10px);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.search-button:hover:not(:disabled) {
+  background: rgba(155, 89, 182, 0.7);
+  border-color: rgba(155, 89, 182, 0.8);
+  box-shadow: 0 4px 12px rgba(155, 89, 182, 0.4);
+  transform: translateY(-2px);
+}
+
+.search-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.search-loading {
+  color: rgba(155, 89, 182, 0.8);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* 搜索建议样式 */
+.search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 700px;
+  margin-top: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(155, 89, 182, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 1000;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.suggestion-item {
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+  font-size: 15px;
+  border-bottom: 1px solid rgba(155, 89, 182, 0.1);
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background: rgba(155, 89, 182, 0.15);
+  padding-left: 24px;
+}
+
 .view-mode-buttons {
   display: flex;
   gap: 10px;

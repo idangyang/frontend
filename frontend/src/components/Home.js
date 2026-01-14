@@ -14,6 +14,12 @@ const Home = () => {
   const [showBackgroundModal, setShowBackgroundModal] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [isComposing, setIsComposing] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,6 +28,31 @@ const Home = () => {
     fetchCurrentUser();
     loadBackgroundImage();
   }, []);
+
+  // 搜索建议防抖
+  useEffect(() => {
+    // 如果正在使用中文输入法输入拼音，不获取建议
+    if (isComposing) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      if (searchQuery.trim()) {
+        fetchSuggestions();
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        // 如果清空搜索框且之前搜索过，重新加载所有内容
+        if (hasSearched) {
+          setHasSearched(false);
+          fetchVideos();
+          fetchSeries();
+        }
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, isComposing]);
 
   const fetchCurrentUser = () => {
     const userStr = localStorage.getItem('user');
@@ -58,6 +89,72 @@ const Home = () => {
       console.error('获取系列列表失败:', err);
       setSeries([]);
     }
+  };
+
+  const fetchSuggestions = async () => {
+    try {
+      const [videoSuggestions, seriesSuggestions] = await Promise.all([
+        api.get('/videos/suggestions', { params: { query: searchQuery } }),
+        api.get('/series/suggestions', { params: { query: searchQuery } })
+      ]);
+
+      const allSuggestions = [
+        ...(videoSuggestions.data.suggestions || []),
+        ...(seriesSuggestions.data.suggestions || [])
+      ];
+
+      // 去重
+      const uniqueSuggestions = [...new Set(allSuggestions)];
+      setSuggestions(uniqueSuggestions.slice(0, 10));
+      setShowSuggestions(uniqueSuggestions.length > 0);
+    } catch (err) {
+      console.error('获取搜索建议失败:', err);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const performSearch = async () => {
+    try {
+      setIsSearching(true);
+      setLoading(true);
+      setShowSuggestions(false);
+      setHasSearched(true);
+
+      const [videosResponse, seriesResponse] = await Promise.all([
+        api.get('/videos/search', { params: { query: searchQuery } }),
+        api.get('/series/search', { params: { query: searchQuery } })
+      ]);
+
+      setVideos(videosResponse.data.videos || []);
+      setSeries(seriesResponse.data.series || []);
+      setError('');
+    } catch (err) {
+      console.error('搜索失败:', err);
+      setError('搜索失败，请稍后重试');
+      setVideos([]);
+      setSeries([]);
+    } finally {
+      setLoading(false);
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchClick = () => {
+    // 始终可以点击，但无内容时不执行搜索
+    if (!searchQuery.trim()) {
+      return;
+    }
+    performSearch();
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    setSearchQuery(suggestion);
+    setShowSuggestions(false);
+    // 延迟一下再搜索，让 searchQuery 更新完成
+    setTimeout(() => {
+      performSearch();
+    }, 100);
   };
 
   const handleVideoClick = (videoId) => {
@@ -147,6 +244,67 @@ const Home = () => {
         {currentUser && (
           <div className="user-display" onClick={() => navigate('/profile')}>
             {currentUser.username}
+          </div>
+        )}
+      </div>
+
+      {/* 搜索框 */}
+      <div className="search-container">
+        <div className="search-input-wrapper">
+          <div className="search-input-container">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="搜索视频标题"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onCompositionStart={() => setIsComposing(true)}
+              onCompositionEnd={() => setIsComposing(false)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearchClick();
+                }
+              }}
+              onFocus={() => {
+                if (suggestions.length > 0) {
+                  setShowSuggestions(true);
+                }
+              }}
+            />
+            {searchQuery && (
+              <button
+                className="search-clear-button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSuggestions([]);
+                  setShowSuggestions(false);
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          <button
+            className="search-button"
+            onClick={handleSearchClick}
+          >
+            🔍 搜索
+          </button>
+        </div>
+        {isSearching && <span className="search-loading">搜索中...</span>}
+
+        {/* 搜索建议 */}
+        {showSuggestions && suggestions.length > 0 && (
+          <div className="search-suggestions">
+            {suggestions.map((suggestion, index) => (
+              <div
+                key={index}
+                className="suggestion-item"
+                onClick={() => handleSuggestionClick(suggestion)}
+              >
+                🔍 {suggestion}
+              </div>
+            ))}
           </div>
         )}
       </div>

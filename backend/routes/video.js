@@ -8,6 +8,8 @@ const fs = require('fs');
 const path = require('path');
 const { generateThumbnail, getVideoAspectRatio } = require('../utils/thumbnail');
 const { needsConversion, convertToMP4 } = require('../utils/videoConverter');
+const { buildSearchQuery } = require('../utils/searchHelper');
+const { sortSearchResults } = require('../utils/sortHelper');
 
 // 异步转码函数
 async function startAsyncTranscode(videoId, originalPath) {
@@ -126,6 +128,80 @@ router.post('/upload', auth, upload.fields([
   } catch (error) {
     console.error('上传失败:', error);
     res.status(500).json({ error: '上传失败' });
+  }
+});
+
+// 搜索建议（返回匹配的标题列表）
+router.get('/suggestions', async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query) {
+      return res.json({ suggestions: [] });
+    }
+
+    const searchQuery = buildSearchQuery(query);
+
+    if (Object.keys(searchQuery).length === 0) {
+      return res.json({ suggestions: [] });
+    }
+
+    // 只返回标题，限制10条
+    const videos = await Video.find(searchQuery)
+      .select('title')
+      .limit(10);
+
+    const suggestions = videos.map(v => v.title);
+
+    res.json({ suggestions });
+  } catch (error) {
+    console.error('获取搜索建议失败:', error);
+    res.json({ suggestions: [] });
+  }
+});
+
+// 搜索视频
+router.get('/search', async (req, res) => {
+  try {
+    const { query, page = 1, limit = 20 } = req.query;
+
+    if (!query) {
+      return res.status(400).json({ error: '请提供搜索关键词' });
+    }
+
+    const searchQuery = buildSearchQuery(query);
+
+    if (Object.keys(searchQuery).length === 0) {
+      return res.json({
+        videos: [],
+        totalPages: 0,
+        currentPage: page,
+        message: '搜索关键词不符合最小长度要求（至少1个字符）'
+      });
+    }
+
+    // 获取所有匹配的视频（不在数据库层面排序和分页）
+    const allVideos = await Video.find(searchQuery)
+      .populate('uploader', 'username avatar');
+
+    // 使用自定义排序函数：先按播放次数，再按字母顺序
+    const sortedVideos = sortSearchResults(allVideos);
+
+    // 在内存中进行分页
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit * 1;
+    const paginatedVideos = sortedVideos.slice(startIndex, endIndex);
+
+    const count = sortedVideos.length;
+
+    res.json({
+      videos: paginatedVideos,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page
+    });
+  } catch (error) {
+    console.error('搜索视频失败:', error);
+    res.status(500).json({ error: '搜索视频失败' });
   }
 });
 
