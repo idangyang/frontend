@@ -6,7 +6,7 @@ const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const fs = require('fs');
 const path = require('path');
-const { generateThumbnail, getVideoAspectRatio } = require('../utils/thumbnail');
+const { generateThumbnail, getVideoAspectRatio, getVideoDuration } = require('../utils/thumbnail');
 const { needsConversion, convertToMP4 } = require('../utils/videoConverter');
 const { buildSearchQuery } = require('../utils/searchHelper');
 const { sortSearchResults } = require('../utils/sortHelper');
@@ -96,12 +96,22 @@ router.post('/upload', auth, upload.fields([
       console.error('获取视频宽高比失败:', err);
     }
 
+    // 获取视频时长
+    let duration = 0;
+    try {
+      duration = await getVideoDuration(finalVideoPath);
+      console.log('视频时长:', duration, '秒');
+    } catch (err) {
+      console.error('获取视频时长失败:', err);
+    }
+
     const video = new Video({
       title: title || videoFile.originalname,
       description: description || '',
       filename: finalFilename,
       filepath: finalVideoPath,
       thumbnail: thumbnailPath,
+      duration: duration,
       aspectRatio: aspectRatio,
       transcodeStatus: transcodeStatus,
       originalFilepath: finalVideoPath,

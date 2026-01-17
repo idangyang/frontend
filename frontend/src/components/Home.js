@@ -4,6 +4,18 @@ import api from '../services/api';
 import { getResourceUrl } from '../config';
 import './Home.css';
 
+// 预设背景图片配置
+const PRESET_BACKGROUNDS = [
+  { id: 'bg1', name: '背景1', url: require('../assets/backgrounds/bg1.png') },
+  { id: 'bg2', name: '背景2', url: require('../assets/backgrounds/bg2.png') },
+  { id: 'bg3', name: '背景3', url: require('../assets/backgrounds/bg3.png') },
+  { id: 'bg4', name: '背景4', url: require('../assets/backgrounds/bg4.png') },
+  { id: 'bg5', name: '背景5', url: require('../assets/backgrounds/bg5.png') },
+  { id: 'bg6', name: '背景6', url: require('../assets/backgrounds/bg6.png') },
+  { id: 'bg7', name: '背景7', url: require('../assets/backgrounds/bg7.png') },
+  { id: 'bg8', name: '背景8', url: require('../assets/backgrounds/bg8.png') },
+];
+
 const Home = () => {
   const [videos, setVideos] = useState([]);
   const [series, setSeries] = useState([]);
@@ -14,6 +26,7 @@ const Home = () => {
   const [showBackgroundModal, setShowBackgroundModal] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [selectedPresetBg, setSelectedPresetBg] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
@@ -21,6 +34,20 @@ const Home = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const navigate = useNavigate();
+
+  // 格式化视频时长（秒 -> MM:SS 或 HH:MM:SS）
+  const formatDuration = (seconds) => {
+    if (!seconds || seconds <= 0) return null;
+
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
 
   useEffect(() => {
     fetchVideos();
@@ -176,6 +203,13 @@ const Home = () => {
     }
   };
 
+  // 处理预设背景选择
+  const handlePresetSelect = (preset) => {
+    setSelectedPresetBg(preset.id);
+    setPreviewImage(preset.url);
+    setBackgroundImage(null); // 清除自定义上传的图片
+  };
+
   // 处理图片选择
   const handleImageSelect = (e) => {
     const file = e.target.files[0];
@@ -185,6 +219,7 @@ const Home = () => {
         return;
       }
       setBackgroundImage(file);
+      setSelectedPresetBg(null); // 清除预设背景选择
       const reader = new FileReader();
       reader.onload = (e) => {
         setPreviewImage(e.target.result);
@@ -195,8 +230,28 @@ const Home = () => {
 
   // 上传背景图片
   const handleUploadBackground = () => {
+    // 如果选择了预设背景
+    if (selectedPresetBg) {
+      const preset = PRESET_BACKGROUNDS.find(bg => bg.id === selectedPresetBg);
+      if (preset) {
+        localStorage.setItem('homeBackground', preset.url);
+        localStorage.setItem('homeBackgroundType', 'preset');
+        localStorage.setItem('homeBackgroundPresetId', preset.id);
+        document.body.style.backgroundImage = `url(${preset.url})`;
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundAttachment = 'fixed';
+        setShowBackgroundModal(false);
+        setSelectedPresetBg(null);
+        setPreviewImage(null);
+        alert('背景设置成功');
+      }
+      return;
+    }
+
+    // 如果上传了自定义图片
     if (!backgroundImage) {
-      alert('请先选择图片');
+      alert('请先选择图片或预设背景');
       return;
     }
 
@@ -204,6 +259,8 @@ const Home = () => {
     reader.onload = (e) => {
       const imageData = e.target.result;
       localStorage.setItem('homeBackground', imageData);
+      localStorage.setItem('homeBackgroundType', 'custom');
+      localStorage.removeItem('homeBackgroundPresetId');
       document.body.style.backgroundImage = `url(${imageData})`;
       document.body.style.backgroundSize = 'cover';
       document.body.style.backgroundPosition = 'center';
@@ -220,11 +277,14 @@ const Home = () => {
   const handleResetBackground = () => {
     if (window.confirm('确定要恢复默认背景吗？')) {
       localStorage.removeItem('homeBackground');
+      localStorage.removeItem('homeBackgroundType');
+      localStorage.removeItem('homeBackgroundPresetId');
       document.body.style.backgroundImage = '';
       document.body.style.backgroundColor = '';
       setShowBackgroundModal(false);
       setBackgroundImage(null);
       setPreviewImage(null);
+      setSelectedPresetBg(null);
       alert('已恢复默认背景');
     }
   };
@@ -443,6 +503,9 @@ const Home = () => {
                           <span>📹</span>
                         </div>
                       )}
+                      {formatDuration(video.duration) && (
+                        <div className="video-duration">{formatDuration(video.duration)}</div>
+                      )}
                     </div>
                   </div>
                   <div className="video-info">
@@ -476,6 +539,9 @@ const Home = () => {
                           <span>📹</span>
                         </div>
                       )}
+                      {formatDuration(video.duration) && (
+                        <div className="video-duration">{formatDuration(video.duration)}</div>
+                      )}
                     </div>
                   </div>
                   <h3 className="video-title">{video.title}</h3>
@@ -499,6 +565,32 @@ const Home = () => {
           <div className="background-modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>设置背景图片</h2>
 
+            {/* 预设背景选择 */}
+            <div className="preset-backgrounds-section">
+              <h3>选择预设背景</h3>
+              <div className="preset-backgrounds-grid">
+                {PRESET_BACKGROUNDS.map((preset) => (
+                  <div
+                    key={preset.id}
+                    className={`preset-bg-item ${selectedPresetBg === preset.id ? 'selected' : ''}`}
+                    onClick={() => handlePresetSelect(preset)}
+                  >
+                    <img src={preset.url} alt={preset.name} />
+                    <span className="preset-bg-name">{preset.name}</span>
+                    {selectedPresetBg === preset.id && (
+                      <div className="preset-bg-check">✓</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 分隔线 */}
+            <div className="background-divider">
+              <span>或</span>
+            </div>
+
+            {/* 自定义上传 */}
             <div className="background-upload-area" onClick={() => document.getElementById('background-input').click()}>
               <input
                 id="background-input"
@@ -506,7 +598,7 @@ const Home = () => {
                 accept="image/*"
                 onChange={handleImageSelect}
               />
-              <p>📁 点击选择图片</p>
+              <p>📁 点击上传自定义图片</p>
               <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginTop: '10px' }}>
                 支持 JPG、PNG、GIF 等格式
               </p>
@@ -519,7 +611,7 @@ const Home = () => {
             )}
 
             <div className="background-modal-actions">
-              <button className="btn-upload" onClick={handleUploadBackground} disabled={!backgroundImage}>
+              <button className="btn-upload" onClick={handleUploadBackground} disabled={!backgroundImage && !selectedPresetBg}>
                 确认设置
               </button>
               <button className="btn-reset" onClick={handleResetBackground}>

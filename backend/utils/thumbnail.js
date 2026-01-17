@@ -134,4 +134,4 @@ const generateThumbnail = async (videoPath, outputPath) => {
   }
 };
 
-module.exports = { generateThumbnail, getVideoAspectRatio };
+module.exports = { generateThumbnail, getVideoAspectRatio, getVideoDuration };

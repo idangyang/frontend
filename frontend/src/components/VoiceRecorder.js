@@ -23,6 +23,12 @@ const VoiceRecorder = ({ onRecordComplete, maxDuration = 10 }) => {
 
   const startRecording = async () => {
     try {
+      // 检查浏览器是否支持 getUserMedia
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('您的浏览器不支持录音功能。请使用最新版本的 Chrome、Firefox 或 Safari，并确保使用 HTTPS 访问。');
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -66,7 +72,24 @@ const VoiceRecorder = ({ onRecordComplete, maxDuration = 10 }) => {
 
     } catch (error) {
       console.error('无法访问麦克风:', error);
-      alert('无法访问麦克风，请检查权限设置');
+
+      let errorMessage = '无法访问麦克风。';
+
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        errorMessage += '请允许浏览器访问麦克风权限。';
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        errorMessage += '未检测到麦克风设备。';
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        errorMessage += '麦克风被其他应用占用。';
+      } else if (error.name === 'OverconstrainedError') {
+        errorMessage += '麦克风不支持所需的音频设置。';
+      } else if (error.name === 'SecurityError') {
+        errorMessage += '请使用 HTTPS 或 localhost 访问此页面。';
+      } else {
+        errorMessage += '请检查浏览器权限设置和网络连接。';
+      }
+
+      alert(errorMessage);
     }
   };
 
