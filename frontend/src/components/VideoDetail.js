@@ -25,10 +25,61 @@ const VideoDetail = () => {
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const shownDanmakusRef = useRef(new Set());
 
+  // 播放控制状态
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const playerWrapperRef = useRef(null);
+
   useEffect(() => {
     fetchVideoData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // 键盘控制
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      switch(e.key) {
+        case ' ':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          skipTime(-10);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          skipTime(10);
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isPlaying, currentTime, duration]);
+
+  // 全屏状态监听
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement || !!document.webkitFullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (videoRef.current && canvasRef.current && video) {
@@ -75,6 +126,7 @@ const VideoDetail = () => {
     if (!videoRef.current || !danmakuEngineRef.current) return;
 
     const currentTime = videoRef.current.currentTime;
+    setCurrentTime(currentTime);
 
     // 检测是否发生了时间跳跃（拖动进度条）
     const timeJump = Math.abs(currentTime - lastTime) > 1;
@@ -119,15 +171,16 @@ const VideoDetail = () => {
     setLastTime(currentTime);
   };
 
-  const handlePlay = () => {
-    if (danmakuEngineRef.current) {
-      danmakuEngineRef.current.resume();
-    }
-  };
-
-  const handlePause = () => {
-    if (danmakuEngineRef.current) {
-      danmakuEngineRef.current.pause();
+  const handlePlayStateChange = () => {
+    if (videoRef.current) {
+      setIsPlaying(!videoRef.current.paused);
+      if (danmakuEngineRef.current) {
+        if (videoRef.current.paused) {
+          danmakuEngineRef.current.pause();
+        } else {
+          danmakuEngineRef.current.resume();
+        }
+      }
     }
   };
 
@@ -239,6 +292,95 @@ const VideoDetail = () => {
     }
   };
 
+  // 播放控制函数
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (isPlaying) {
+      videoRef.current.pause();
+    } else {
+      videoRef.current.play();
+    }
+  };
+
+  const handleLoadedMetadataUpdate = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+      setVolume(videoRef.current.volume);
+    }
+    handleLoadedMetadata();
+  };
+
+  const handleProgressChange = (e) => {
+    const newTime = parseFloat(e.target.value);
+    if (videoRef.current) {
+      videoRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  const handleVolumeChange = (e) => {
+    const newVolume = parseFloat(e.target.value);
+    if (videoRef.current) {
+      videoRef.current.volume = newVolume;
+      setVolume(newVolume);
+      setIsMuted(newVolume === 0);
+    }
+  };
+
+  const toggleMute = () => {
+    if (!videoRef.current) return;
+    if (isMuted) {
+      videoRef.current.volume = volume || 0.5;
+      setIsMuted(false);
+    } else {
+      videoRef.current.volume = 0;
+      setIsMuted(true);
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (!playerWrapperRef.current) return;
+
+    if (!isFullscreen) {
+      if (playerWrapperRef.current.requestFullscreen) {
+        playerWrapperRef.current.requestFullscreen();
+      } else if (playerWrapperRef.current.webkitRequestFullscreen) {
+        playerWrapperRef.current.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+  };
+
+  const togglePictureInPicture = async () => {
+    if (!videoRef.current) return;
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else {
+        await videoRef.current.requestPictureInPicture();
+      }
+    } catch (err) {
+      console.error('画中画模式切换失败:', err);
+    }
+  };
+
+  const skipTime = (seconds) => {
+    if (!videoRef.current) return;
+    videoRef.current.currentTime = Math.max(0, Math.min(duration, currentTime + seconds));
+  };
+
+  const formatTime = (time) => {
+    if (isNaN(time)) return '0:00';
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
   if (loading) {
     return <div className="video-detail-container"><div className="loading">加载中...</div></div>;
   }
@@ -262,20 +404,117 @@ const VideoDetail = () => {
               ⚠️ 视频正在后台转码中，当前播放原始文件。转码完成后画质和兼容性会更好，请稍后刷新页面。
             </div>
           )}
-          <div className="video-player-wrapper">
+          <div className="video-player-wrapper" ref={playerWrapperRef}>
             <video
               ref={videoRef}
               className="video-player"
               src={videoUrl}
-              controls
               autoPlay
               onTimeUpdate={handleTimeUpdate}
-              onPlay={handlePlay}
-              onPause={handlePause}
+              onPlay={handlePlayStateChange}
+              onPause={handlePlayStateChange}
               onSeeking={handleSeeking}
-              onLoadedMetadata={handleLoadedMetadata}
+              onLoadedMetadata={handleLoadedMetadataUpdate}
             />
             <canvas ref={canvasRef} className="danmaku-canvas" />
+          </div>
+
+          <div className="custom-controls">
+            <div className="progress-bar-container">
+              <input
+                type="range"
+                min="0"
+                max={duration || 0}
+                value={currentTime}
+                onChange={handleProgressChange}
+                className="progress-bar"
+              />
+              <div className="time-display">
+                <span>{formatTime(currentTime)}</span>
+                <span> / </span>
+                <span>{formatTime(duration)}</span>
+              </div>
+            </div>
+
+            <div className="controls-row">
+              <div className="controls-left">
+                <button onClick={() => skipTime(-10)} className="control-btn" title="后退10秒">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="11 19 2 12 11 5 11 19"></polygon>
+                    <polygon points="22 19 13 12 22 5 22 19"></polygon>
+                  </svg>
+                </button>
+                <button onClick={togglePlay} className="control-btn play-btn" title={isPlaying ? '暂停' : '播放'}>
+                  {isPlaying ? (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="6" y="4" width="4" height="16"></rect>
+                      <rect x="14" y="4" width="4" height="16"></rect>
+                    </svg>
+                  ) : (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                  )}
+                </button>
+                <button onClick={() => skipTime(10)} className="control-btn" title="快进10秒">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="13 19 22 12 13 5 13 19"></polygon>
+                    <polygon points="2 19 11 12 2 5 2 19"></polygon>
+                  </svg>
+                </button>
+              </div>
+
+              <div className="controls-right">
+                <div className="volume-control">
+                  <button onClick={toggleMute} className="control-btn" title={isMuted ? '取消静音' : '静音'}>
+                    {isMuted || volume === 0 ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                        <line x1="23" y1="9" x2="17" y2="15"></line>
+                        <line x1="17" y1="9" x2="23" y2="15"></line>
+                      </svg>
+                    ) : volume < 0.5 ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                      </svg>
+                    )}
+                  </button>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={isMuted ? 0 : volume}
+                    onChange={handleVolumeChange}
+                    className="volume-slider"
+                  />
+                </div>
+                <button onClick={togglePictureInPicture} className="control-btn" title="画中画">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <rect x="8" y="10" width="12" height="8" rx="1" ry="1"></rect>
+                  </svg>
+                </button>
+                <button onClick={toggleFullscreen} className="control-btn" title={isFullscreen ? '退出全屏' : '全屏'}>
+                  {isFullscreen ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="video-info-section">

@@ -2,6 +2,12 @@ const ffmpeg = require('fluent-ffmpeg');
 const path = require('path');
 const fs = require('fs');
 
+// 配置 FFmpeg 路径（如果系统中已安装 FFmpeg）
+// 如果 FFmpeg 在系统 PATH 中，fluent-ffmpeg 会自动找到
+// 如果需要手动指定路径，取消下面的注释并设置正确的路径
+// ffmpeg.setFfmpegPath('/usr/bin/ffmpeg');
+// ffmpeg.setFfprobePath('/usr/bin/ffprobe');
+
 /**
  * 获取视频时长（秒）
  * @param {string} videoPath - 视频文件路径

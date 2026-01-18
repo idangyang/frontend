@@ -195,11 +195,24 @@ const Home = () => {
   // 加载背景图片
   const loadBackgroundImage = () => {
     const savedBackground = localStorage.getItem('homeBackground');
-    if (savedBackground) {
+    const backgroundType = localStorage.getItem('homeBackgroundType');
+
+    if (savedBackground && backgroundType) {
+      // 用户已设置背景，使用用户设置的背景
       document.body.style.backgroundImage = `url(${savedBackground})`;
       document.body.style.backgroundSize = 'cover';
       document.body.style.backgroundPosition = 'center';
       document.body.style.backgroundAttachment = 'fixed';
+    } else {
+      // 用户未设置背景，随机选择一张预设背景
+      if (PRESET_BACKGROUNDS.length > 0) {
+        const randomIndex = Math.floor(Math.random() * PRESET_BACKGROUNDS.length);
+        const randomBg = PRESET_BACKGROUNDS[randomIndex];
+        document.body.style.backgroundImage = `url(${randomBg.url})`;
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundAttachment = 'fixed';
+      }
     }
   };
 
