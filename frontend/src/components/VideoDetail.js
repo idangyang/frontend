@@ -148,7 +148,9 @@ const VideoDetail = () => {
                 danmaku.color || '#FFFFFF',
                 danmaku.type || 'scroll',
                 danmaku.isVoice || false,
-                danmaku.audioUrl || null
+                danmaku.audioUrl || null,
+                danmaku.likes || 0,
+                danmaku._id
               );
               shownDanmakusRef.current.add(danmaku._id);
             }
@@ -160,7 +162,9 @@ const VideoDetail = () => {
               danmaku.color || '#FFFFFF',
               danmaku.type || 'scroll',
               danmaku.isVoice || false,
-              danmaku.audioUrl || null
+              danmaku.audioUrl || null,
+              danmaku.likes || 0,
+              danmaku._id
             );
             shownDanmakusRef.current.add(danmaku._id);
           }
@@ -218,7 +222,15 @@ const VideoDetail = () => {
       });
 
       if (danmakuEngineRef.current) {
-        danmakuEngineRef.current.add(danmakuText, danmakuColor, 'scroll', false, null);
+        danmakuEngineRef.current.add(
+          danmakuText,
+          danmakuColor,
+          'scroll',
+          false,
+          null,
+          response.data.danmaku.likes || 0,
+          response.data.danmaku._id
+        );
         shownDanmakusRef.current.add(response.data.danmaku._id);
       }
 
@@ -250,7 +262,15 @@ const VideoDetail = () => {
 
       if (danmakuEngineRef.current) {
         const audioUrl = getResourceUrl(response.data.danmaku.audioUrl);
-        danmakuEngineRef.current.add(text, danmakuColor, 'scroll', true, audioUrl);
+        danmakuEngineRef.current.add(
+          text,
+          danmakuColor,
+          'scroll',
+          true,
+          audioUrl,
+          response.data.danmaku.likes || 0,
+          response.data.danmaku._id
+        );
         shownDanmakusRef.current.add(response.data.danmaku._id);
       }
 
@@ -301,6 +321,10 @@ const VideoDetail = () => {
           ? { ...d, likes: response.data.likes, likedBy: [...(d.likedBy || []), localStorage.getItem('userId')] }
           : d
       ));
+      // 同步更新滚动弹幕引擎中的点赞数
+      if (danmakuEngineRef.current) {
+        danmakuEngineRef.current.updateDanmakuLikes(danmakuId, response.data.likes);
+      }
     } catch (err) {
       console.error('点赞失败:', err);
       alert(err.response?.data?.error || '点赞失败');
@@ -317,6 +341,10 @@ const VideoDetail = () => {
           ? { ...d, likes: response.data.likes, likedBy: (d.likedBy || []).filter(id => id !== userId) }
           : d
       ));
+      // 同步更新滚动弹幕引擎中的点赞数
+      if (danmakuEngineRef.current) {
+        danmakuEngineRef.current.updateDanmakuLikes(danmakuId, response.data.likes);
+      }
     } catch (err) {
       console.error('取消点赞失败:', err);
       alert(err.response?.data?.error || '取消点赞失败');
