@@ -68,7 +68,7 @@ const Auth = ({ onLoginSuccess }) => {
 
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-      localStorage.setItem('userId', response.data.user._id);
+      localStorage.setItem('userId', response.data.user.id);
 
       // console.log('Auth - 已保存到localStorage的用户信息:', JSON.parse(localStorage.getItem('user')));
 

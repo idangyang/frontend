@@ -19,6 +19,7 @@ class DanmakuEngine {
     this.actionPanel = null; // 操作面板 DOM 元素
     this.onLikeCallback = null; // 点赞回调
     this.onReportCallback = null; // 举报回调
+    this.onDeleteCallback = null; // 删除回调
     this.isPanelHovered = false; // 操作面板是否被悬停
     this.hideTimer = null; // 延迟隐藏定时器
 
@@ -52,14 +53,26 @@ class DanmakuEngine {
   }
 
   init() {
-    this.canvas.width = this.canvas.offsetWidth;
-    this.canvas.height = this.canvas.offsetHeight;
+    const dpr = window.devicePixelRatio || 1;
+    const width = this.canvas.offsetWidth;
+    const height = this.canvas.offsetHeight;
+
+    // 设置 Canvas 物理分辨率
+    this.canvas.width = width * dpr;
+    this.canvas.height = height * dpr;
+
+    // 设置 Canvas CSS 尺寸
+    this.canvas.style.width = `${width}px`;
+    this.canvas.style.height = `${height}px`;
+
+    // 缩放绘图上下文
+    this.ctx.scale(dpr, dpr);
 
     // 计算可以容纳多少条轨道
-    const trackCount = Math.floor(this.canvas.height / this.trackHeight);
+    const trackCount = Math.floor(height / this.trackHeight);
     this.tracks = new Array(trackCount).fill(null).map(() => ({
       lastDanmakuTime: 0,
-      lastDanmakuX: this.canvas.width
+      lastDanmakuX: width
     }));
   }
 
@@ -98,7 +111,7 @@ class DanmakuEngine {
 
   // 将文本分割成多行
   wrapText(text, maxWidth, fontSize) {
-    this.ctx.font = `bold ${fontSize}px Arial`;
+    this.ctx.font = `italic bold ${fontSize}px "Microsoft YaHei", "SimHei", sans-serif`;
     const words = text.split('');
     const lines = [];
     let currentLine = '';
@@ -125,6 +138,24 @@ class DanmakuEngine {
 
   // 检测指定位置是否有弹幕
   getDanmakuAtPosition(x, y) {
+    // 优先检查当前已经悬停的弹幕，扩大其判定范围到整个卡片区域
+    // 这样可以防止鼠标在移动到按钮的过程中因为离开文字区域而导致面板消失
+    if (this.hoveredDanmaku) {
+      const d = this.hoveredDanmaku;
+      const lineHeight = d.fontSize * this.lineHeight;
+      const totalTextHeight = d.lines.length * lineHeight;
+
+      const cardX = d.x - 12;
+      const cardY = d.y - d.fontSize - 10;
+      const cardWidth = d.textWidth + 24;
+      // 这里的 cardHeight 必须与 showActionPanel 中的逻辑保持一致
+      const cardHeight = totalTextHeight + 82;
+
+      if (x >= cardX && x <= cardX + cardWidth && y >= cardY && y <= cardY + cardHeight) {
+        return d;
+      }
+    }
+
     // 从后往前遍历（后面的弹幕在上层）
     for (let i = this.danmakus.length - 1; i >= 0; i--) {
       const danmaku = this.danmakus[i];
@@ -137,7 +168,7 @@ class DanmakuEngine {
       const textLeft = danmaku.x;
       const textRight = danmaku.x + danmaku.textWidth;
 
-      // 检测鼠标是否在边界框内
+      // 检测鼠标是否在文字边界框内
       if (x >= textLeft && x <= textRight && y >= textTop && y <= textBottom) {
         return danmaku;
       }
@@ -221,11 +252,15 @@ class DanmakuEngine {
     }
 
     // 计算卡片位置和尺寸（包裹弹幕）
-    const textHeight = danmaku.fontSize;
+    const lineHeight = danmaku.fontSize * this.lineHeight;
+    const totalTextHeight = danmaku.lines.length * lineHeight;
+
     const cardX = danmaku.x - 12; // 左侧留出边距
-    const cardY = danmaku.y - textHeight - 12; // 上方留出边距
+    // 将 cardY 的偏移从 -12 改为 -10，使卡片整体下移一点（y 轴正方向）
+    const cardY = danmaku.y - danmaku.fontSize - 10;
     const cardWidth = danmaku.textWidth + 24; // 宽度匹配弹幕文本加边距
-    const cardHeight = textHeight + 60; // 高度包含弹幕和按钮
+    // 增加卡片高度，以确保底部留白充足且与顶部协调，与 getDanmakuAtPosition 逻辑一致
+    const cardHeight = totalTextHeight + 82;
 
     // 设置卡片背景位置和样式
     this.actionPanelBg.style.left = `${cardX}px`;
@@ -235,7 +270,8 @@ class DanmakuEngine {
     this.actionPanelBg.style.display = 'block';
 
     // 设置按钮容器位置（在卡片底部）
-    const buttonY = cardY + textHeight + 20; // 弹幕下方
+    // 调整按钮的垂直位置，使其与文字和底部的间距更均衡
+    const buttonY = cardY + totalTextHeight + 24;
     this.actionPanel.style.left = `${cardX}px`;
     this.actionPanel.style.top = `${buttonY}px`;
     this.actionPanel.style.width = `${cardWidth}px`;
@@ -252,7 +288,8 @@ class DanmakuEngine {
         if (this.onLikeCallback) {
           this.onLikeCallback(danmaku.id);
         }
-      }
+      },
+      danmaku.isLiked // 传入当前点赞状态
     );
 
     // 复制按钮
@@ -284,6 +321,20 @@ class DanmakuEngine {
     this.actionPanel.appendChild(likeBtn);
     this.actionPanel.appendChild(copyBtn);
     this.actionPanel.appendChild(reportBtn);
+
+    // 如果是自己发送的弹幕，显示删除按钮
+    if (danmaku.isOwner) {
+      const deleteBtn = this.createActionButton(
+        'delete',
+        '',
+        () => {
+          if (this.onDeleteCallback) {
+            this.onDeleteCallback(danmaku.id);
+          }
+        }
+      );
+      this.actionPanel.appendChild(deleteBtn);
+    }
   }
 
   // 隐藏操作面板
@@ -297,9 +348,9 @@ class DanmakuEngine {
   }
 
   // 创建操作按钮
-  createActionButton(type, text, onClick) {
+  createActionButton(type, text, onClick, isActive = false) {
     const button = document.createElement('button');
-    button.className = `danmaku-action-btn danmaku-action-btn-${type}`;
+    button.className = `danmaku-action-btn danmaku-action-btn-${type} ${isActive ? 'active' : ''}`;
 
     // 创建 SVG 图标
     let svgIcon = '';
@@ -320,6 +371,14 @@ class DanmakuEngine {
         <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
         <line x1="12" y1="9" x2="12" y2="13"></line>
         <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>`;
+    } else if (type === 'delete') {
+      // 删除图标（垃圾桶）
+      svgIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        <line x1="10" y1="11" x2="10" y2="17"></line>
+        <line x1="14" y1="11" x2="14" y2="17"></line>
       </svg>`;
     }
 
@@ -363,12 +422,13 @@ class DanmakuEngine {
   }
 
   // 设置回调函数
-  setCallbacks(onLike, onReport) {
+  setCallbacks(onLike, onReport, onDelete) {
     this.onLikeCallback = onLike;
     this.onReportCallback = onReport;
+    this.onDeleteCallback = onDelete;
   }
 
-  add(text, color = '#FFFFFF', type = 'scroll', isVoice = false, audioUrl = null, likes = 0, id = null) {
+  add(text, color = '#FFFFFF', type = 'scroll', isVoice = false, audioUrl = null, likes = 0, id = null, isLiked = false, isOwner = false) {
     // 根据点赞数计算字号：每10个赞增加1个字号
     const calculatedFontSize = this.fontSize + Math.floor(likes / 10);
 
@@ -376,7 +436,7 @@ class DanmakuEngine {
     const lines = this.wrapText(text, this.maxWidth, calculatedFontSize);
 
     // 计算最大行宽
-    this.ctx.font = `bold ${calculatedFontSize}px Arial`;
+    this.ctx.font = `italic bold ${calculatedFontSize}px "Microsoft YaHei", "SimHei", sans-serif`;
     let maxLineWidth = 0;
     lines.forEach(line => {
       const lineWidth = this.ctx.measureText(line).width;
@@ -410,6 +470,8 @@ class DanmakuEngine {
       button: null,
       isPlaying: false,
       likes,
+      isLiked, // 记录当前用户是否已点赞
+      isOwner, // 记录是否是自己发送的弹幕
       isPaused: false // 悬停暂停状态
     };
 
@@ -516,7 +578,10 @@ class DanmakuEngine {
   }
 
   render() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    // 使用逻辑尺寸清理 Canvas
+    const width = this.canvas.width / (window.devicePixelRatio || 1);
+    const height = this.canvas.height / (window.devicePixelRatio || 1);
+    this.ctx.clearRect(0, 0, width, height);
 
     this.danmakus = this.danmakus.filter(danmaku => {
       // 只有在非暂停状态且弹幕未被悬停时才移动弹幕
@@ -572,10 +637,8 @@ class DanmakuEngine {
 
   // 绘制普通文本弹幕（支持多行）
   drawTextDanmaku(danmaku) {
-    this.ctx.font = `bold ${danmaku.fontSize}px Arial`;
+    this.ctx.font = `italic bold ${danmaku.fontSize}px "Microsoft YaHei", "SimHei", sans-serif`;
     this.ctx.fillStyle = danmaku.color;
-    this.ctx.strokeStyle = '#000000';
-    this.ctx.lineWidth = 3;
     this.ctx.globalAlpha = danmaku.opacity;
 
     const lineHeight = danmaku.fontSize * this.lineHeight;
@@ -583,8 +646,6 @@ class DanmakuEngine {
     // 绘制每一行
     danmaku.lines.forEach((line, index) => {
       const yPos = danmaku.y + (index * lineHeight);
-      // 描边（黑色边框）
-      this.ctx.strokeText(line, danmaku.x, yPos);
       // 填充文字
       this.ctx.fillText(line, danmaku.x, yPos);
     });
@@ -598,10 +659,8 @@ class DanmakuEngine {
 
     // 绘制文本
     this.ctx.globalAlpha = danmaku.opacity;
-    this.ctx.font = `bold ${danmaku.fontSize}px Arial`;
+    this.ctx.font = `italic bold ${danmaku.fontSize}px "Microsoft YaHei", "SimHei", sans-serif`;
     this.ctx.fillStyle = danmaku.color;
-    this.ctx.strokeStyle = '#000000';
-    this.ctx.lineWidth = 3;
     this.ctx.textAlign = 'left';
     this.ctx.textBaseline = 'alphabetic';
 
@@ -610,7 +669,6 @@ class DanmakuEngine {
     // 绘制每一行
     danmaku.lines.forEach((line, index) => {
       const yPos = danmaku.y + (index * lineHeight);
-      this.ctx.strokeText(line, textX, yPos);
       this.ctx.fillText(line, textX, yPos);
     });
   }
@@ -637,15 +695,23 @@ class DanmakuEngine {
     }));
   }
 
-  updateDanmakuLikes(danmakuId, newLikes) {
+  updateDanmakuLikes(danmakuId, newLikes, isLiked) {
     this.danmakus.forEach(danmaku => {
       if (danmaku.id === danmakuId) {
         danmaku.likes = newLikes;
+        if (isLiked !== undefined) {
+          danmaku.isLiked = isLiked;
+        }
         // 重新计算字号
         const newFontSize = this.fontSize + Math.floor(newLikes / 10);
         danmaku.fontSize = newFontSize;
       }
     });
+
+    // 如果当前悬停的是这个弹幕，刷新面板显示最新的点赞态
+    if (this.hoveredDanmaku && this.hoveredDanmaku.id === danmakuId) {
+      this.showActionPanel(this.hoveredDanmaku);
+    }
   }
 
 }

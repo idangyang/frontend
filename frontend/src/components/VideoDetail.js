@@ -24,6 +24,7 @@ const VideoDetail = () => {
   const [lastTime, setLastTime] = useState(0);
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const shownDanmakusRef = useRef(new Set());
+  const danmakusRef = useRef([]); // 用于在引擎回调中获取最新状态
 
   // 播放控制状态
   const [isPlaying, setIsPlaying] = useState(false);
@@ -35,6 +36,10 @@ const VideoDetail = () => {
   const playerWrapperRef = useRef(null);
 
   useEffect(() => {
+    danmakusRef.current = danmakus;
+  }, [danmakus]);
+
+  useEffect(() => {
     fetchVideoData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -44,7 +49,7 @@ const VideoDetail = () => {
     const handleKeyPress = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
-      switch(e.key) {
+      switch (e.key) {
         case ' ':
           e.preventDefault();
           togglePlay();
@@ -92,8 +97,18 @@ const VideoDetail = () => {
 
       // 设置悬停操作回调函数
       danmakuEngineRef.current.setCallbacks(
-        handleLikeDanmaku,
-        handleReportDanmaku
+        (danmakuId) => {
+          const danmaku = danmakusRef.current.find(d => d._id === danmakuId);
+          const userId = localStorage.getItem('userId');
+          const isLiked = danmaku?.likedBy?.includes(userId);
+          if (isLiked) {
+            handleUnlikeDanmaku(danmakuId);
+          } else {
+            handleLikeDanmaku(danmakuId);
+          }
+        },
+        handleReportDanmaku,
+        handleDeleteDanmaku
       );
 
       danmakuEngineRef.current.start();
@@ -157,7 +172,9 @@ const VideoDetail = () => {
                 danmaku.isVoice || false,
                 danmaku.audioUrl || null,
                 danmaku.likes || 0,
-                danmaku._id
+                danmaku._id,
+                danmaku.likedBy?.includes(localStorage.getItem('userId')),
+                danmaku.user?._id === localStorage.getItem('userId')
               );
               shownDanmakusRef.current.add(danmaku._id);
             }
@@ -171,7 +188,9 @@ const VideoDetail = () => {
               danmaku.isVoice || false,
               danmaku.audioUrl || null,
               danmaku.likes || 0,
-              danmaku._id
+              danmaku._id,
+              danmaku.likedBy?.includes(localStorage.getItem('userId')),
+              danmaku.user?._id === localStorage.getItem('userId')
             );
             shownDanmakusRef.current.add(danmaku._id);
           }
@@ -236,7 +255,9 @@ const VideoDetail = () => {
           false,
           null,
           response.data.danmaku.likes || 0,
-          response.data.danmaku._id
+          response.data.danmaku._id,
+          false, // 新发送的弹幕默认未点赞
+          true // 自己发送的弹幕当然是 owner
         );
         shownDanmakusRef.current.add(response.data.danmaku._id);
       }
@@ -276,7 +297,9 @@ const VideoDetail = () => {
           true,
           audioUrl,
           response.data.danmaku.likes || 0,
-          response.data.danmaku._id
+          response.data.danmaku._id,
+          false, // 新发送的弹幕默认未点赞
+          true // 自己发送的弹幕当然是 owner
         );
         shownDanmakusRef.current.add(response.data.danmaku._id);
       }
@@ -328,9 +351,9 @@ const VideoDetail = () => {
           ? { ...d, likes: response.data.likes, likedBy: [...(d.likedBy || []), localStorage.getItem('userId')] }
           : d
       ));
-      // 同步更新滚动弹幕引擎中的点赞数
+      // 同步更新滚动弹幕引擎中的点赞数和状态
       if (danmakuEngineRef.current) {
-        danmakuEngineRef.current.updateDanmakuLikes(danmakuId, response.data.likes);
+        danmakuEngineRef.current.updateDanmakuLikes(danmakuId, response.data.likes, true);
       }
     } catch (err) {
       console.error('点赞失败:', err);
@@ -348,9 +371,9 @@ const VideoDetail = () => {
           ? { ...d, likes: response.data.likes, likedBy: (d.likedBy || []).filter(id => id !== userId) }
           : d
       ));
-      // 同步更新滚动弹幕引擎中的点赞数
+      // 同步更新滚动弹幕引擎中的点赞数和状态
       if (danmakuEngineRef.current) {
-        danmakuEngineRef.current.updateDanmakuLikes(danmakuId, response.data.likes);
+        danmakuEngineRef.current.updateDanmakuLikes(danmakuId, response.data.likes, false);
       }
     } catch (err) {
       console.error('取消点赞失败:', err);
@@ -365,6 +388,28 @@ const VideoDetail = () => {
     } catch (err) {
       console.error('举报失败:', err);
       alert(err.response?.data?.error || '举报失败');
+    }
+  };
+
+  const handleDeleteDanmaku = async (danmakuId) => {
+    if (!window.confirm('确定要删除这条弹幕吗？')) return;
+
+    try {
+      await api.delete(`/danmaku/${danmakuId}`);
+      // 从本地状态移除
+      setDanmakus(danmakus.filter(d => d._id !== danmakuId));
+      // 从引擎中清除（简单起见，这里直接调用 clear() 或等待下一帧重绘不失为一个办法，
+      // 但最好是引擎支持 removeById。目前引擎代码中是通过 filter 过滤的，
+      // 我们只需要确保 danmakus 状态更新，下次播放到那里就不会再 add 了。
+      // 对于已经在屏幕上滚动的弹幕，我们可以直接操作引擎的 danmakus 数组）
+      if (danmakuEngineRef.current) {
+        danmakuEngineRef.current.danmakus = danmakuEngineRef.current.danmakus.filter(d => d.id !== danmakuId);
+        danmakuEngineRef.current.hideActionPanel();
+      }
+      alert('弹幕已删除');
+    } catch (err) {
+      console.error('删除弹幕失败:', err);
+      alert(err.response?.data?.error || '删除弹幕失败');
     }
   };
 

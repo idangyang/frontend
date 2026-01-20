@@ -10,7 +10,8 @@
   gap: 30px;
 }
 
-.loading, .error {
+.loading,
+.error {
   text-align: center;
   padding: 60px 40px;
   font-size: 18px;
@@ -641,6 +642,7 @@
     opacity: 0;
     transform: translateY(5px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -680,6 +682,12 @@
   transform: scale(0.95);
 }
 
+.danmaku-action-btn-like.active {
+  background: rgba(255, 105, 180, 0.4);
+  color: #ff69b4;
+  border-color: rgba(255, 105, 180, 0.6);
+}
+
 .danmaku-action-btn-like:hover {
   background: rgba(255, 105, 180, 0.3);
   color: #ff69b4;
@@ -693,6 +701,12 @@
 .danmaku-action-btn-report:hover {
   background: rgba(231, 76, 60, 0.3);
   color: #e74c3c;
+}
+
+.danmaku-action-btn-delete:hover {
+  background: rgba(255, 68, 68, 0.3);
+  color: #ff4444;
+  border-color: rgba(255, 68, 68, 0.5);
 }
 
 .danmaku-action-count {
@@ -712,4 +726,3 @@
   transition: opacity 0.3s ease;
   pointer-events: none;
 }
-
