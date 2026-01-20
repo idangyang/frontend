@@ -62,7 +62,7 @@ router.post('/login', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ error: errors.array()[0].msg });
     }
 
     const { identifier, password } = req.body;
@@ -77,12 +77,12 @@ router.post('/login', [
     });
 
     if (!user) {
-      return res.status(401).json({ error: '用户名/邮箱/UID或密码错误' });
+      return res.status(401).json({ error: '用户不存在' });
     }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ error: '用户名/邮箱/UID或密码错误' });
+      return res.status(401).json({ error: '密码错误' });
     }
 
     const token = jwt.sign(

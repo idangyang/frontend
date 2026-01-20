@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { getResourceUrl } from '../config';
 import './Home.css';
@@ -15,6 +15,21 @@ const PRESET_BACKGROUNDS = [
   { id: 'bg7', name: '背景7', url: require('../assets/backgrounds/bg7.png') },
   { id: 'bg8', name: '背景8', url: require('../assets/backgrounds/bg8.png') },
 ];
+
+const SearchIcon = () => (
+  <svg
+    className="search-icon-svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="11" cy="11" r="8"></circle>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+  </svg>
+);
 
 const Home = () => {
   const [videos, setVideos] = useState([]);
@@ -33,7 +48,9 @@ const Home = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const searchRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // 格式化视频时长（秒 -> MM:SS 或 HH:MM:SS）
   const formatDuration = (seconds) => {
@@ -80,6 +97,39 @@ const Home = () => {
 
     return () => clearTimeout(timer);
   }, [searchQuery, isComposing]);
+
+  // 点击外部关闭搜索建议
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleLogoClick = () => {
+    setSearchQuery('');
+    setSuggestions([]);
+    setShowSuggestions(false);
+    if (hasSearched) {
+      setHasSearched(false);
+      fetchVideos();
+      fetchSeries();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // 监听路由变化，点击导航栏 Logo (to="/") 时重置搜索
+  useEffect(() => {
+    if (location.pathname === '/' && !location.search && hasSearched) {
+      handleLogoClick();
+    }
+  }, [location]);
 
   const fetchCurrentUser = () => {
     const userStr = localStorage.getItem('user');
@@ -313,7 +363,7 @@ const Home = () => {
   return (
     <div className="home-container">
       {/* 搜索框 */}
-      <div className="search-container">
+      <div className={`search-container ${hasSearched ? 'is-searched-page' : ''}`} ref={searchRef}>
         <div className="search-input-wrapper">
           <div className="search-input-container">
             <input
@@ -352,7 +402,7 @@ const Home = () => {
             className="search-button"
             onClick={handleSearchClick}
           >
-            🔍 搜索
+            <SearchIcon /> 搜索
           </button>
         </div>
         {isSearching && <span className="search-loading">搜索中...</span>}
@@ -366,7 +416,7 @@ const Home = () => {
                 className="suggestion-item"
                 onClick={() => handleSuggestionClick(suggestion)}
               >
-                🔍 {suggestion}
+                <SearchIcon /> {suggestion}
               </div>
             ))}
           </div>
@@ -472,7 +522,7 @@ const Home = () => {
                   </div>
                 );
               }
-        })}
+            })}
           </div>
         </div>
       )}
@@ -487,78 +537,78 @@ const Home = () => {
             <div className="no-videos">暂无视频，快去上传吧！</div>
           ) : (
             <div className="video-grid">
-          {videos.map((video) => {
-            const isVertical = video.aspectRatio && video.aspectRatio < 1; // 竖屏视频：宽/高 < 1
+              {videos.map((video) => {
+                const isVertical = video.aspectRatio && video.aspectRatio < 1; // 竖屏视频：宽/高 < 1
 
-            if (isVertical) {
-              // 竖屏视频布局：封面在左，右侧从上到下是标题、简介、发布人
-              return (
-                <div
-                  key={video._id}
-                  className="video-card vertical"
-                  onClick={() => handleVideoClick(video._id)}
-                >
-                  <div className="video-thumbnail-wrapper">
-                    <div className="video-thumbnail">
-                      {video.thumbnail ? (
-                        <img src={getResourceUrl(video.thumbnail)} alt={video.title} />
-                      ) : (
-                        <div className="thumbnail-placeholder">
-                          <span>📹</span>
+                if (isVertical) {
+                  // 竖屏视频布局：封面在左，右侧从上到下是标题、简介、发布人
+                  return (
+                    <div
+                      key={video._id}
+                      className="video-card vertical"
+                      onClick={() => handleVideoClick(video._id)}
+                    >
+                      <div className="video-thumbnail-wrapper">
+                        <div className="video-thumbnail">
+                          {video.thumbnail ? (
+                            <img src={getResourceUrl(video.thumbnail)} alt={video.title} />
+                          ) : (
+                            <div className="thumbnail-placeholder">
+                              <span>📹</span>
+                            </div>
+                          )}
+                          {formatDuration(video.duration) && (
+                            <div className="video-duration">{formatDuration(video.duration)}</div>
+                          )}
                         </div>
-                      )}
-                      {formatDuration(video.duration) && (
-                        <div className="video-duration">{formatDuration(video.duration)}</div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="video-info">
-                    <h3 className="video-title">{video.title}</h3>
-                    <p className="video-description">{video.description || '暂无描述'}</p>
-                    <div className="video-meta">
-                      <span className="video-uploader">
-                        {video.uploader?.username || '未知用户'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            } else {
-              // 横屏视频布局：简介在上，封面在中，标题和发布人在下
-              return (
-                <div
-                  key={video._id}
-                  className="video-card horizontal"
-                  onClick={() => handleVideoClick(video._id)}
-                >
-                  <div className="video-info">
-                    <p className="video-description">{video.description || '暂无描述'}</p>
-                  </div>
-                  <div className="video-thumbnail-wrapper">
-                    <div className="video-thumbnail">
-                      {video.thumbnail ? (
-                        <img src={getResourceUrl(video.thumbnail)} alt={video.title} />
-                      ) : (
-                        <div className="thumbnail-placeholder">
-                          <span>📹</span>
+                      </div>
+                      <div className="video-info">
+                        <h3 className="video-title">{video.title}</h3>
+                        <p className="video-description">{video.description || '暂无描述'}</p>
+                        <div className="video-meta">
+                          <span className="video-uploader">
+                            {video.uploader?.username || '未知用户'}
+                          </span>
                         </div>
-                      )}
-                      {formatDuration(video.duration) && (
-                        <div className="video-duration">{formatDuration(video.duration)}</div>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                  <h3 className="video-title">{video.title}</h3>
-                  <div className="video-meta">
-                    <span className="video-uploader">
-                      {video.uploader?.username || '未知用户'}
-                    </span>
-                  </div>
-                </div>
-              );
-            }
-          })}
-        </div>
+                  );
+                } else {
+                  // 横屏视频布局：简介在上，封面在中，标题和发布人在下
+                  return (
+                    <div
+                      key={video._id}
+                      className="video-card horizontal"
+                      onClick={() => handleVideoClick(video._id)}
+                    >
+                      <div className="video-info">
+                        <p className="video-description">{video.description || '暂无描述'}</p>
+                      </div>
+                      <div className="video-thumbnail-wrapper">
+                        <div className="video-thumbnail">
+                          {video.thumbnail ? (
+                            <img src={getResourceUrl(video.thumbnail)} alt={video.title} />
+                          ) : (
+                            <div className="thumbnail-placeholder">
+                              <span>📹</span>
+                            </div>
+                          )}
+                          {formatDuration(video.duration) && (
+                            <div className="video-duration">{formatDuration(video.duration)}</div>
+                          )}
+                        </div>
+                      </div>
+                      <h3 className="video-title">{video.title}</h3>
+                      <div className="video-meta">
+                        <span className="video-uploader">
+                          {video.uploader?.username || '未知用户'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+              })}
+            </div>
           )}
         </>
       )}

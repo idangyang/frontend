@@ -60,7 +60,25 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 20px;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 搜索结果页布局 */
+.search-container.is-searched-page {
+  flex-direction: row;
+  justify-content: center;
+  /* 居中搜索框，与导航栏 Logo 保持空间平衡 */
+  padding: 15px 20px;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: none;
+  margin: -30px -20px 30px -20px;
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+  gap: 20px;
 }
 
 .search-input-wrapper {
@@ -79,13 +97,14 @@
   align-items: center;
 }
 
-.search-input-wrapper > .search-input {
+.search-input-wrapper>.search-input {
   position: relative;
 }
 
 .search-input {
   width: 100%;
-  padding: 14px 50px 14px 20px;
+  padding: 14px 20px;
+  /* 进一步减小内边距，完全允许文字穿透到按钮下方 */
   font-size: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50px;
@@ -112,28 +131,35 @@
   right: 15px;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(155, 89, 182, 0.5);
-  border: none;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: white;
-  font-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
   transition: all 0.3s ease;
   z-index: 10;
 }
 
 .search-clear-button:hover {
-  background: rgba(155, 89, 182, 0.7);
-  transform: translateY(-50%) scale(1.1);
+  background: transparent;
+  transform: translateY(-50%) scale(1.05);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.search-clear-button:active {
+  transform: translateY(-50%) scale(0.95);
 }
 
 .search-button {
-  padding: 14px 28px;
+  padding: 12px 28px;
   font-size: 16px;
   font-weight: 600;
   border: 2px solid rgba(155, 89, 182, 0.5);
@@ -144,6 +170,15 @@
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-icon-svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
 }
 
 .search-button:hover:not(:disabled) {
@@ -173,11 +208,13 @@
   width: 100%;
   max-width: 700px;
   margin-top: 8px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border: 2px solid rgba(155, 89, 182, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  margin-top: 10px;
   overflow: hidden;
   z-index: 1000;
   animation: slideDown 0.2s ease;
@@ -188,6 +225,7 @@
     opacity: 0;
     transform: translateX(-50%) translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -198,9 +236,18 @@
   padding: 12px 20px;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: var(--text-primary);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 15px;
-  border-bottom: 1px solid rgba(155, 89, 182, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.suggestion-item .search-icon-svg {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
 }
 
 .suggestion-item:last-child {
@@ -300,7 +347,9 @@
   box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3);
 }
 
-.loading, .error, .no-videos {
+.loading,
+.error,
+.no-videos {
   text-align: center;
   padding: 60px 40px;
   font-size: 18px;
@@ -443,7 +492,7 @@
 }
 
 /* 横屏：标题在左下角 */
-.video-card.horizontal > .video-title {
+.video-card.horizontal>.video-title {
   position: absolute;
   bottom: 8px;
   left: 8px;
@@ -502,6 +551,7 @@
   line-height: 1.2;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -574,8 +624,13 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .background-modal-content {
@@ -595,6 +650,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

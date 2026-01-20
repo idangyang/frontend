@@ -62,6 +62,7 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
+  z-index: 5;
 }
 
 .danmaku-interaction-layer {
@@ -589,17 +590,50 @@
   animation: fadeInUp 0.2s ease-out;
 }
 
-/* 弹幕卡片样式 */
+/* 弹幕包裹卡片样式 */
 .danmaku-action-card {
   display: flex;
-  gap: 6px;
-  padding: 6px 8px;
+  flex-direction: column;
+  padding: 12px;
   background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 6px;
+  border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   animation: fadeInUp 0.2s ease-out;
+}
+
+/* 卡片背景（在 Canvas 下方） */
+.danmaku-action-card-bg {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  animation: fadeInUp 0.2s ease-out;
+}
+
+/* 按钮容器（在 Canvas 上方） */
+.danmaku-action-buttons {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-start;
+  padding: 8px 12px;
+}
+
+/* 弹幕文本占位区域 */
+.danmaku-text-spacer {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+/* 按钮容器 */
+.danmaku-card-buttons {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-start;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 @keyframes fadeInUp {

@@ -8,9 +8,11 @@ class DanmakuEngine {
     this.running = false;
     this.paused = false;
     this.tracks = []; // 弹幕轨道
-    this.trackHeight = 30; // 每条轨道的高度
+    this.trackHeight = 50; // 每条轨道的高度
     this.fontSize = 24;
     this.speed = 3; // 弹幕速度
+    this.maxWidth = 400; // 弹幕最大宽度，超过则换行
+    this.lineHeight = 1; // 行高倍数
 
     // 悬停相关状态
     this.hoveredDanmaku = null; // 当前悬停的弹幕
@@ -19,6 +21,18 @@ class DanmakuEngine {
     this.onReportCallback = null; // 举报回调
     this.isPanelHovered = false; // 操作面板是否被悬停
     this.hideTimer = null; // 延迟隐藏定时器
+
+    // 创建卡片容器（z-index 低于 Canvas）
+    this.cardContainer = document.createElement('div');
+    this.cardContainer.className = 'danmaku-card-container';
+    this.cardContainer.style.position = 'absolute';
+    this.cardContainer.style.top = '0';
+    this.cardContainer.style.left = '0';
+    this.cardContainer.style.width = '100%';
+    this.cardContainer.style.height = '100%';
+    this.cardContainer.style.pointerEvents = 'none';
+    this.cardContainer.style.zIndex = '1';
+    this.canvas.parentElement.appendChild(this.cardContainer);
 
     // 创建按钮容器
     this.buttonContainer = document.createElement('div');
@@ -61,8 +75,8 @@ class DanmakuEngine {
 
       if (hoveredDanmaku !== this.hoveredDanmaku) {
         // 悬停状态改变
-        if (this.hoveredDanmaku) {
-          // 恢复之前悬停的弹幕
+        if (this.hoveredDanmaku && !this.isPanelHovered) {
+          // 只有在不悬停卡片时才恢复之前的弹幕
           this.hoveredDanmaku.isPaused = false;
           this.hideActionPanel();
         }
@@ -74,11 +88,39 @@ class DanmakuEngine {
           this.hoveredDanmaku.isPaused = true;
           this.showActionPanel(this.hoveredDanmaku);
           this.canvas.style.cursor = 'pointer';
-        } else {
+        } else if (!this.isPanelHovered) {
+          // 只有在不悬停卡片时才恢复默认光标
           this.canvas.style.cursor = 'default';
         }
       }
     });
+  }
+
+  // 将文本分割成多行
+  wrapText(text, maxWidth, fontSize) {
+    this.ctx.font = `bold ${fontSize}px Arial`;
+    const words = text.split('');
+    const lines = [];
+    let currentLine = '';
+
+    for (let i = 0; i < words.length; i++) {
+      const testLine = currentLine + words[i];
+      const metrics = this.ctx.measureText(testLine);
+      const testWidth = metrics.width;
+
+      if (testWidth > maxWidth && currentLine.length > 0) {
+        lines.push(currentLine);
+        currentLine = words[i];
+      } else {
+        currentLine = testLine;
+      }
+    }
+
+    if (currentLine.length > 0) {
+      lines.push(currentLine);
+    }
+
+    return lines;
   }
 
   // 检测指定位置是否有弹幕
@@ -87,10 +129,11 @@ class DanmakuEngine {
     for (let i = this.danmakus.length - 1; i >= 0; i--) {
       const danmaku = this.danmakus[i];
 
-      // 计算弹幕的边界框
-      const textHeight = danmaku.fontSize;
-      const textTop = danmaku.y - textHeight;
-      const textBottom = danmaku.y + textHeight / 4;
+      // 计算弹幕的边界框（支持多行）
+      const lineHeight = danmaku.fontSize * this.lineHeight;
+      const totalHeight = danmaku.lines.length * lineHeight;
+      const textTop = danmaku.y - danmaku.fontSize;
+      const textBottom = textTop + totalHeight;
       const textLeft = danmaku.x;
       const textRight = danmaku.x + danmaku.textWidth;
 
@@ -126,21 +169,21 @@ class DanmakuEngine {
   showActionPanel(danmaku) {
     if (!danmaku.id) return; // 没有 ID 的弹幕不显示操作面板
 
-    // 创建卡片容器
-    if (!this.actionPanel) {
-      this.actionPanel = document.createElement('div');
-      this.actionPanel.className = 'danmaku-action-card';
-      this.actionPanel.style.position = 'absolute';
-      this.actionPanel.style.pointerEvents = 'auto';
-      this.actionPanel.style.zIndex = '100';
-      this.buttonContainer.appendChild(this.actionPanel);
+    // 创建卡片背景
+    if (!this.actionPanelBg) {
+      this.actionPanelBg = document.createElement('div');
+      this.actionPanelBg.className = 'danmaku-action-card-bg';
+      this.actionPanelBg.style.position = 'absolute';
+      this.actionPanelBg.style.pointerEvents = 'auto';
+      this.cardContainer.style.pointerEvents = 'auto'; // 允许卡片容器接收事件
+      this.cardContainer.appendChild(this.actionPanelBg);
 
-      // 添加卡片的鼠标事件监听
-      this.actionPanel.addEventListener('mouseenter', () => {
+      // 添加卡片背景的鼠标事件监听
+      this.actionPanelBg.addEventListener('mouseenter', () => {
         this.isPanelHovered = true;
       });
 
-      this.actionPanel.addEventListener('mouseleave', () => {
+      this.actionPanelBg.addEventListener('mouseleave', () => {
         this.isPanelHovered = false;
         // 鼠标离开卡片时，隐藏面板并恢复弹幕
         if (this.hoveredDanmaku) {
@@ -152,12 +195,50 @@ class DanmakuEngine {
       });
     }
 
-    // 计算卡片位置（弹幕下方）
-    const cardX = danmaku.x;
-    const cardY = danmaku.y + 8; // 弹幕下方留出间距
+    // 创建按钮容器
+    if (!this.actionPanel) {
+      this.actionPanel = document.createElement('div');
+      this.actionPanel.className = 'danmaku-action-buttons';
+      this.actionPanel.style.position = 'absolute';
+      this.actionPanel.style.pointerEvents = 'auto';
+      this.buttonContainer.appendChild(this.actionPanel);
 
+      // 添加按钮容器的鼠标事件监听
+      this.actionPanel.addEventListener('mouseenter', () => {
+        this.isPanelHovered = true;
+      });
+
+      this.actionPanel.addEventListener('mouseleave', () => {
+        this.isPanelHovered = false;
+        // 鼠标离开按钮时，隐藏面板并恢复弹幕
+        if (this.hoveredDanmaku) {
+          this.hoveredDanmaku.isPaused = false;
+          this.hoveredDanmaku = null;
+          this.hideActionPanel();
+          this.canvas.style.cursor = 'default';
+        }
+      });
+    }
+
+    // 计算卡片位置和尺寸（包裹弹幕）
+    const textHeight = danmaku.fontSize;
+    const cardX = danmaku.x - 12; // 左侧留出边距
+    const cardY = danmaku.y - textHeight - 12; // 上方留出边距
+    const cardWidth = danmaku.textWidth + 24; // 宽度匹配弹幕文本加边距
+    const cardHeight = textHeight + 60; // 高度包含弹幕和按钮
+
+    // 设置卡片背景位置和样式
+    this.actionPanelBg.style.left = `${cardX}px`;
+    this.actionPanelBg.style.top = `${cardY}px`;
+    this.actionPanelBg.style.width = `${cardWidth}px`;
+    this.actionPanelBg.style.height = `${cardHeight}px`;
+    this.actionPanelBg.style.display = 'block';
+
+    // 设置按钮容器位置（在卡片底部）
+    const buttonY = cardY + textHeight + 20; // 弹幕下方
     this.actionPanel.style.left = `${cardX}px`;
-    this.actionPanel.style.top = `${cardY}px`;
+    this.actionPanel.style.top = `${buttonY}px`;
+    this.actionPanel.style.width = `${cardWidth}px`;
     this.actionPanel.style.display = 'flex';
 
     // 清空并重新创建按钮
@@ -199,7 +280,7 @@ class DanmakuEngine {
       }
     );
 
-    // 将按钮直接添加到卡片
+    // 将按钮直接添加到按钮容器
     this.actionPanel.appendChild(likeBtn);
     this.actionPanel.appendChild(copyBtn);
     this.actionPanel.appendChild(reportBtn);
@@ -209,6 +290,9 @@ class DanmakuEngine {
   hideActionPanel() {
     if (this.actionPanel) {
       this.actionPanel.style.display = 'none';
+    }
+    if (this.actionPanelBg) {
+      this.actionPanelBg.style.display = 'none';
     }
   }
 
@@ -288,10 +372,21 @@ class DanmakuEngine {
     // 根据点赞数计算字号：每10个赞增加1个字号
     const calculatedFontSize = this.fontSize + Math.floor(likes / 10);
 
-    // 测量文本宽度（语音弹幕需要额外空间显示播放按钮）
-    this.ctx.font = `${calculatedFontSize}px Arial`;
-    const textWidth = this.ctx.measureText(text).width;
-    const totalWidth = isVoice ? textWidth + 40 : textWidth;
+    // 将文本分割成多行
+    const lines = this.wrapText(text, this.maxWidth, calculatedFontSize);
+
+    // 计算最大行宽
+    this.ctx.font = `bold ${calculatedFontSize}px Arial`;
+    let maxLineWidth = 0;
+    lines.forEach(line => {
+      const lineWidth = this.ctx.measureText(line).width;
+      if (lineWidth > maxLineWidth) {
+        maxLineWidth = lineWidth;
+      }
+    });
+
+    // 语音弹幕需要额外空间显示播放按钮
+    const totalWidth = isVoice ? maxLineWidth + 40 : maxLineWidth;
 
     // 找到可用的轨道
     const trackIndex = this.findAvailableTrack(totalWidth);
@@ -299,6 +394,7 @@ class DanmakuEngine {
     const danmaku = {
       id,
       text,
+      lines, // 存储分割后的多行文本
       color,
       type,
       x: this.canvas.width,
@@ -474,7 +570,7 @@ class DanmakuEngine {
     this.render();
   }
 
-  // 绘制普通文本弹幕
+  // 绘制普通文本弹幕（支持多行）
   drawTextDanmaku(danmaku) {
     this.ctx.font = `bold ${danmaku.fontSize}px Arial`;
     this.ctx.fillStyle = danmaku.color;
@@ -482,13 +578,19 @@ class DanmakuEngine {
     this.ctx.lineWidth = 3;
     this.ctx.globalAlpha = danmaku.opacity;
 
-    // 描边（黑色边框）
-    this.ctx.strokeText(danmaku.text, danmaku.x, danmaku.y);
-    // 填充文字
-    this.ctx.fillText(danmaku.text, danmaku.x, danmaku.y);
+    const lineHeight = danmaku.fontSize * this.lineHeight;
+
+    // 绘制每一行
+    danmaku.lines.forEach((line, index) => {
+      const yPos = danmaku.y + (index * lineHeight);
+      // 描边（黑色边框）
+      this.ctx.strokeText(line, danmaku.x, yPos);
+      // 填充文字
+      this.ctx.fillText(line, danmaku.x, yPos);
+    });
   }
 
-  // 绘制语音弹幕（只绘制文本，按钮由 DOM 元素处理）
+  // 绘制语音弹幕（只绘制文本，按钮由 DOM 元素处理，支持多行）
   drawVoiceDanmaku(danmaku) {
     const buttonSize = 24;
     const padding = 8;
@@ -503,8 +605,14 @@ class DanmakuEngine {
     this.ctx.textAlign = 'left';
     this.ctx.textBaseline = 'alphabetic';
 
-    this.ctx.strokeText(danmaku.text, textX, danmaku.y);
-    this.ctx.fillText(danmaku.text, textX, danmaku.y);
+    const lineHeight = danmaku.fontSize * this.lineHeight;
+
+    // 绘制每一行
+    danmaku.lines.forEach((line, index) => {
+      const yPos = danmaku.y + (index * lineHeight);
+      this.ctx.strokeText(line, textX, yPos);
+      this.ctx.fillText(line, textX, yPos);
+    });
   }
 
   stop() {
